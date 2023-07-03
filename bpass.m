@@ -1,8 +1,4 @@
 function res = bpass(image, lnoise, lobject, varargin)
-
-%TESTING
-
-
 % FUNCTION NAME:
 %   bpass
 %
