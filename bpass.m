@@ -37,7 +37,6 @@ function res = bpass(image, lnoise, lobject, varargin)
 %		* Added /field keyword 
 %   10/23/2022 - K Aptowicz (WCU)
 %       * Translated to MATLAB
-%
 
 %% Reading and setting parameters
 % Set default values for optional parameters

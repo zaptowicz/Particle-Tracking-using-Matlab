@@ -1,14 +1,34 @@
 function dx = mkpdf(tr,dt,varargin)
-
-% mkpdf  --  Eric R. Weeks  --  new version 5-20-05
+% FUNCTION NAME:
+%   mkpdf
 %
-% see http://www.physics.emory.edu/~weeks/idl/
-%    for more information and software updates
+% DESCRIPTION:
+%   Calculates the change in particle positions (dx, dy) for a delay time, dt. 
 %
+% INPUT (REQUIRED)
+%              tr: Track array.
+%		       dt: delay time between frames to compare
 %
+% INPUT (OPTIONAL)
+%		       dim: [default: 2] Spatial dimensions
 %
-% basically this utilizes very similar code to getdx.pro, which
-% I wrote a while ago.
+% OUTPUT:
+%		    output: [dx, dy]
+%
+% CALLING SEQUENCE:
+%   dxdy = mkpdf(t,1)
+%
+% NOTES :
+%   IDL Version - This code was translated from mkpdf.pro code provided on
+%           Eric Weeks' website:
+%           https://physics.emory.edu/faculty/weeks/idl/kit/mkpdf.pro
+%
+% REVISION HISTORY:
+%   05/20/2005 - Eric Weeks
+%       * Write orginal version
+%   07/05/2023 - Kevin Aptowicz
+%       * Translated to MATLAB
+%
 
 %% Reading and setting parameters
 % Set default values for optional parameters

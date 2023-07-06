@@ -1,24 +1,43 @@
 function result=getdx(tr,thedt,varargin)
-
-
-% getdx                   5-22-00   Eric R. Weeks
-% patched 8-14-01 to return -1 for nonvalid results
-% major bug fixed 6-3-05 for samples with unevenly gridded time stamps
-% gdxtrinterp added internally 6-13-05
-% Gianguido Cianci: 24 Jan 07. Now rounds timestamp to remedy old
-% interpolation bug.
-
-% function getdx,tr,dt,dim=dim
+% FUNCTION NAME:
+%   getdx
 %
-% see http://www.physics.emory.edu/~weeks/idl/getdx.html
-% for more details.
-% =================================================================
+% DESCRIPTION:
+%   This program calculates displacement vectors from a track array. The 
+%   output of the program is an array in one-to-one correspondence with the 
+%   track array, with data [dx, dy, dr]. dr is the length of the 
+%   displacement vector, in other words, sqrt(dx*dx + dy*dy). 
+%
+% INPUT (REQUIRED)
+%              tr: Track array.
+%		    thedt: delay time between frames to compare
+%
+% INPUT (OPTIONAL)
+%		       dim: [default: 2] Spatial dimensions
+%             flag: ['y'] appends a column of 1's for interpolated values, 0's for
+%                   original values
+% OUTPUT:
+%		    output: [dx, dy, dr]
+%
+% CALLING SEQUENCE:
+%   dx=getdx(t,1,dim=2)
+%
+% NOTES:
+%   IDL VERSION
+%           This code was translated from getdx.pro code provided
+%           on Eric Weeks' website:
+%           https://physics.emory.edu/faculty/weeks/idl/kit/getdx.pro
+% PROCERDURE: 
+%   The program does interpolate particle positions for missing parts of 
+%   the track file. Use 'flag' to see what values are based on 
+%   interpolation.   
+%
+% MODIFICATION HISTORY:
+%   05/22/2000 - Eric Weeks
+%       * Wrote the first version
+%   07/05/2023 - Kevin Aptowicz (WCU)
+%       * Translated latest version to MATLAB
 
-% gdxtrinterp.pro -- from "trinterp.pro"
-%
-% started 6-17-98 by ERW
-%
-% interpolates gaps in tracked data
 
 %% Reading and setting parameters
 % Set default values for optional parameters

@@ -102,8 +102,8 @@ function arr = findfeatures(image, extent, varargin)
 %   05/??/1996 - John C. Crocker
 %		* Added many keywords
 %   06/08/2023 - K Aptowicz (WCU)
-%       * Translated to MATLAB
-%
+%       * Translated to MATLAB 
+%       * Tranlation partly based on Blair and Dufresne code
 
 %% Reading and setting parameters
 % Set default values for optional parameters

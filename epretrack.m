@@ -17,7 +17,7 @@ function res = epretrack(stk, varargin)
 %			        centers. The default value is diameter+1.
 %		       dia: Setting this parameter saves runtime by reducing the
 %			        runtime wasted on low mass 'noise' features.
-%	           sep:
+%	           sep: 
 %             mass:
 %              min: Set this optional parameter to the minimum allowed
 %			        value for the peak brightness of a feature. Useful
@@ -58,7 +58,7 @@ function res = epretrack(stk, varargin)
 %  ppretrack -- Peter's version (begun 7/8/97)
 %  jpretrack -- John's version (begun 7/8/98)
 %  epretrack -- Eric's version (begun 2/15/05)
-% some minor errors fixed July 2017% improved "single" keyword
+%        some minor errors fixed July 2017% improved "single" keyword
 %  06/12/2023 - K Aptowicz (WCU)
 %       * Translated to MATLAB
 
@@ -136,17 +136,17 @@ rep = 1;
 
 ss=size(stk);
 ns = ss(3);
-if ns >= 200, rep = 25; end
+if ns >= 200, rep = 50; end
 if ~isempty(first), ns = 1; end  %handy for a quick looksee...
 res = ones(1,6)*(-1);
 
 for i = 1:ns
-    if ((mod((i+1),rep) == 0) && ~isempty(quiet))
+    if ((mod((i),rep) == 0) && isempty(quiet))
         disp(['processing frame ', int2str(i),' out of ',int2str(ns),'....'])
     end
     im = bpass(stk(:,:,i),bplo,bphi);
     massTemp=mass;minTemp=min;quietTemp=quiet;
-    f = findfeatures(im,dia,sep,mass=massTemp,min=minTemp,quiet=quietTemp);
+    f = findfeatures(im,dia,sep,mass=massTemp,min=minTemp,quiet=quietTemp,quiet='y');
     nf = numel(f(:,1));
     if (f(1) ~= -1)
         res=[[res];[f,ones(nf,1)*[i]]];

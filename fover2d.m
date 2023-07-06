@@ -164,10 +164,9 @@ for i = 1:numel(x)
     end
 end
 if (numel(s) == 2)        % 2-D image
-    colormap("gray")
     imagesc(output); axis equal tight
-else
     colormap("gray")
+else
     implay(output/255,10)
 end
 end

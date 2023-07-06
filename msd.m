@@ -230,7 +230,9 @@ end
 
 % added by ERW on 8-15-04 just 'cuz I like to plot stuff:
 if isempty(noplot)
-    plot(data(:,1), data(:,dim+2),'-o')
+    plot(data(:,1), data(:,dim+2),'o')
+    xlabel('\tau')
+    ylabel('msd')
 end
 
 end

@@ -1,9 +1,4 @@
 function plottr(tarray,varargin)
-
-% goodenough=goodenough, noconnect=noconnect
-
-% IDL keywords not coded: ,tv=tv,, x=x,y=y,dot=dot,timecut=timecut,_extra=eee
-%
 % FUNCTION NAME:
 %   plottr
 %
@@ -14,74 +9,31 @@ function plottr(tarray,varargin)
 %        tarray: (double) 
 %
 % INPUT (OPTIONAL):
-%         maxtime: (double) is the maximum 'dt' to calculate, in seconds.
-%                   If this is not set, MSD computes out in dt until fewer than
-%                   1000 independent measurements are being averaged.  Setting
-%                   'maxtime' or 'mydts' overrides this limitation, of course.
-%         outfile: (string) will save the result to a gdf file named
-%                  'outfile', which is useful for batch file operation.
-%       micperpix: (double) set to the pixel size to convert the input
-%                  data file to microns if that has not been done already.
-%                  If it is single number, the magnification is assumed to
-%                  be isotropic, otherwise, provide a dim-dimensional vector.
-%        timestep: (double) the number of seconds between frames (e.g.
-%                  1/60.)
-%             dim: (double) the spatial dimensionality of the data (default 2).
-%           mydts: (array) allows the user to supply a vector of (frame
-%                  number) dt's if he/she doesn't want my log-spaced points
-%                  in time.
-%           erode: (double) drops all data within 'erode' time steps of an
-%                  end or gap in a trajectory, to eliminate mistaken track
-%                  contributions. Very useful-- usually erode=2 or 3 works
-%                  pretty well.
-%            minN: (double) sets minimum number of independent measurements;
-%                  only useful maxtime is not used
-%           quiet: set to 'y' to NOT display messages
-%       keepdrift: set to 'y' to NOT remove <x>^2
-%          noplot: set to 'y' to NOT plot anything at the end
+%              ID: (interger) set equal to the particle ID number to plot.
+%                  Plots just this particle track
+%      goodenough: (interger) Set the minimum length of a track to plot.
+%                   Shorter tracks are ignored. 
 %
-% OUTPUT:
-%             data: (double)tracked data array where
-%                   if dim =2 then
-%                   [time,<x>,<y>,<x^2>,<y^2>,<x^2 + y^2>,<N>],
-%                   or if dim=3 then
-%                   [time,<x>,<y>,<z>,<x^2>,<y^2>,<z^2>,<x^2 + y^2 + z^2>,<N>],
-%                   and N is the approx. independent number of data points
-%                   in the average.
-%	                NB: for all variances, <x^2> has had <x>^2 subtracted off.
+% OUTPUT: NONE
 %
 % CALLING SEQUENCE:
-%   m = msd(t)
-%   m = msd(t,micperpix=0.137, dim=2, timestep=1/60,maxtime=1,minN=100,quiet='y',noplot='y');
+%   plottr(t)
+%   plottr(t, ID=4)
+%   plottr(t, goodenough=10)
 %
 % NOTES :
-%   IDL Version - This code was translated from msd.pro code provided on
+%   IDL Version - This code was translated from plottr.pro code provided on
 %           Eric Weeks' website:
-%           https://physics.emory.edu/faculty/weeks/idl/yykit/msd.pro
-%   Variances - The variances are presumably what you are interested in. The
-%           means are there merely to give you an idea of the average 'drift'
-%           in the data (and because <x>^2 has to be subtracted from the
-%           variances).  'N' can be used for error estimation: the error
-%           in the variance < x(dt)^2 > ~ < x(dt)^2 >/sqrt( N(dt) ).
+%           https://physics.emory.edu/faculty/weeks/idl/kit/plottr.pro
+%   Matlab Version - Added the ability to pick ID, but didn't inlcude a
+%           bunch of other stuff from the IDL version
 %
 % REVISION HISTORY:
-%   06/??/1999 - John Crocker
-%       * Wrote orginal version at U. Penn
-%   05/??/2002 - Victor Breedveld
-%       * Included minN keyword
-%   12/??/2003 - Victor Breedveld
-%       * Fixed sorting bug in LTRINTERP.PRO under DOS (Windows)
-%       * interpolation routine now named LTRINTERP_VB
-%   06/??/2004 - Victor Breedveld
-%       * Adapted to work for single particle tracks!!!
-%   07/??/2004 - Victor Breedveld
-%       * Adapted to work with results of poor tracking!!!
-%   10/23/2022 - K Aptowicz
+%   05/15/1998 - Eric Weeks
+%       * Started the code
+%   07/05/2023 - K Aptowicz
 %       * Translated to MATLAB
 %
-%% Reading and setting parameters
-% Set default values for optional parameters
-
 
 %% Reading and setting parameters
 % Set default values for optional parameters

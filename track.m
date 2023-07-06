@@ -268,7 +268,7 @@ res = [res', length(t)+1]';
 
 % get the initial positions
 ngood = res(2) - res(1);
-eyes = 1:ngood;
+eyes = 1:ngood;             %
 
 if  ~isempty(inipos)
     pos = inipos(:,1:dim);
@@ -285,9 +285,9 @@ zspan = 50;
 if n > 200, zspan = 20; end
 if n > 500, zspan = 10; end
 
-resx = zeros(zspan,n) - 1;
-bigresx = zeros(z,n) - 1;
-mem = zeros(n,1);
+resx = zeros(zspan,n) - 1;  % Size = [Time of "working" copy, N particle in first frame];
+bigresx = zeros(z,n) - 1;   % Size = [Total number of frames, N particle in first frame];
+mem = zeros(n,1);           % Size = [N particle in first frame,1];
 uniqid = 1:n;
 maxid = n;
 olist = [0.,0.];
@@ -330,18 +330,16 @@ if notnsqrd
         maxx = max(xyzs(w,d+1));
         volume = volume * (maxx-minn);
     end
-    volume;
     blocksize = max( [maxdisp,((volume)/(20*ngood))^(1.0/dim)] );
 end
 
 %   Start the main loop over the frames.
 for i = istart:z
-
     ispan = mod(i-1,zspan)+1;
 
     %   Get the new particle positions.
-    m = res(i+1) - res(i);
-    eyes = (1:m) + res(i)-1;
+    m = res(i+1) - res(i);      % Number of particles in new frame
+    eyes = (1:m) + res(i)-1;    % New possible unique particle IDs
 
     if m  > 0
         xyi = xyzs(eyes,1:dim);
@@ -400,7 +398,7 @@ for i = istart:z
             scube = mod((scube + nblocks),nblocks);
 
             % get the sorting for the particles by their "s" positions.
-            [ed,isort] = sort(si);
+            [~,isort] = sort(si);
 
             %   make a hash table which will allow us to know which new particles
             %   are at a given si.
@@ -481,7 +479,6 @@ for i = istart:z
             else
                 nontrivial = 0;
             end
-        %%
         else
             %   or: Use simple N^2 time routine to calculate trivial bonds
 
@@ -497,29 +494,30 @@ for i = istart:z
             ymat=mod(reshape(0:1:m*ntrack-1,ntrack,m),ntrack)+1;
 
             for d = 1:dim
-                x = xyi(:,d);
-                y = pos(wh,d);
+                x2 = xyi(:,d);  % Postion of particles in new frame
+                x1 = pos(wh,d); % Postion of particles in previous frame
                 if d == 1
-                    dq = (x(xmat) - y(ymat)).^2;
+                    dq = (x2(xmat) - x1(ymat)).^2;
                 else
-                    dq = dq + (x(xmat) - y(ymat)).^2;
+                    dq = dq + (x2(xmat) - x1(ymat)).^2;
                 end
             end
-
+            % dq is a displacement matrix between all particles in one frame and the
+            % next
             ltmax = dq < maxdisq;
 
             % figure out which trivial bonds go with which
             rowtot = zeros(n,1);
-            rowtot(wh) = sum(ltmax,2);
+            rowtot(wh) = sum(ltmax,2);   % Number of matching particles in from i+1 for each particle in frame i
             if ntrack > 1
-                coltot = sum(ltmax,1);
+                coltot = sum(ltmax,1);   % Number of matching particles in from i for each particle in frame i+1
             else
                 coltot = ltmax;
             end
             which1 = zeros(n,1);
             for j=1:ntrack
                 [mx, w] = max(ltmax(j,:));
-                which1(wh(j)) = w;
+                which1(wh(j)) = w;      % Array of best guess matches
             end
 
             ntrk = fix( n - sum(rowtot == 0));
@@ -545,8 +543,9 @@ for i = istart:z
             else
                 nontrivial = 0;
             end
-        end
 
+        end
+        %%
         %   THE TRIVIAL BOND CODE ENDS
         if nontrivial
 
@@ -843,7 +842,6 @@ for i = istart:z
             end
             n = n + nnew;
         end
-
     else
         disp([' Warning- No positions found for t=',int2str(i),"!"])
     end
@@ -871,7 +869,6 @@ for i = istart:z
 
     %  we need to insert the working copy of resx into the big copy bigresx
     %  do our house keeping every zspan time steps (dumping bad lost guys)
-
     if (ispan == zspan) || (i == z)
 
         %  if a permanently lost guy has fewer than goodenough valid positions
@@ -902,8 +899,7 @@ for i = istart:z
         end
         if ~verbose && isempty(quiet)
             disp(['Frame ', int2str(i),' of ', int2str(z), ' done. ', ...
-                'Tracking ',int2str(ntrk),' particles, ', ...
-                int2str(n),' tracks total.']);
+                'Current frame has ',int2str(ntrk),' particles. ']);
         end
         bigresx(i-(ispan)+1:i,:) = resx(1:ispan,:);
         resx = zeros(zspan,n) - 1;
@@ -994,6 +990,16 @@ ntracks=numel(u);
 u=[u;length(res(:,ndat))+1];
 for i=1:ntracks
     res(u(i):u(i+1)-1,ndat) = i;
+end
+
+if isempty(quiet)
+    disp(['****** TRACKING STATS ******']);
+    disp(['Total number of tracks found: ', int2str(ntracks)]);
+    trkLength=u(2:end)-u(1:end-1);
+    [maxLength,ID]=max(trkLength);
+    disp(['Maximum track length: ', int2str(maxLength), ' (ID: ',int2str(ID),')']);
+    disp(['Mean track length: ', int2str(mean(trkLength))]);
+    disp(['Median track length: ', int2str(median(trkLength))]);
 end
 
 end
