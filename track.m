@@ -496,10 +496,28 @@ for i = istart:z
             for d = 1:dim
                 x2 = xyi(:,d);  % Postion of particles in new frame
                 x1 = pos(wh,d); % Postion of particles in previous frame
-                if d == 1
-                    dq = (x2(xmat) - x1(ymat)).^2;
-                else
-                    dq = dq + (x2(xmat) - x1(ymat)).^2;
+
+                % Matlab has an issue with indexing matrices with matrices.
+                % This is from subref.m:
+                % SUBSREF Subscripted reference.
+                %   A(I) is an array formed from the elements of A specified by the
+                %   subscript vector I.  The resulting array is the same size as I except
+                %   for the special case where A and I are both vectors.  In this case,
+                %   A(I) has the same number of elements as I but has the orientation of A.
+                % FIX: Adding an if statement for the case where I (xmat or ymat) is a vector
+
+                if min(size(xmat)) == 1 % Special case of xmat is a vector
+                    if d == 1
+                        dq = (reshape(x2(xmat),size(xmat)) - reshape(x1(ymat),size(ymat))).^2;
+                    else
+                        dq = dq + (reshape(x2(xmat),size(xmat)) - reshape(x1(ymat),size(ymat))).^2;
+                    end
+                else % normal case when it is not a vector
+                    if d == 1
+                        dq = (x2(xmat) - x1(ymat)).^2;
+                    else
+                        dq = dq + (x2(xmat) - x1(ymat)).^2;
+                    end
                 end
             end
             % dq is a displacement matrix between all particles in one frame and the
