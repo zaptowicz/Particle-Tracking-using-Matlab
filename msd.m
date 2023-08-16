@@ -81,6 +81,8 @@ function data = msd(tracks, varargin)
 %   06/30/2023 - K Aptowicz
 %       * Fixed many programming issues to get minN, maxtime, etc. to work
 %       correctly. 
+%   08/16/2023 - K Aptowicz
+%       * Removed normalizing output to 255. 
 %
 %% Reading and setting parameters
 % Set default values for optional parameters
@@ -211,7 +213,7 @@ for i = 1:2*dim
     data(:,i) = data(:,i)./data(:,2*dim+2);
 end
 if ~isempty(keepdrift)
-    data(:,dim+1:(2*dim)) = data(:,dim+1:(2*dim)) - (data(:,1:dim)^2);
+    data(:,dim+1:(2*dim)) = data(:,dim+1:(2*dim)) - (data(:,1:dim).^2);
 end
 data(:,2*dim+1) = sum(data(:,dim+1:(2*dim)),2);
 
