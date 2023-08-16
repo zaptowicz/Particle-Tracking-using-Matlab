@@ -170,6 +170,9 @@ function res = track(xyzs, maxdisp, varargin)
 %    IDL system routine, 
 %  06/12/2023 - K Aptowicz (WCU)
 %       * Translated to MATLAB
+%  07/21/2023 - K Aptowicz (WCU)
+%       * Fixed issues caused by SUBREF.M when an array is indexed with an
+%       array. Comments in code (search SUBREF)
 %
 %	This code 'track.pro' is copyright 1999, by John C. Crocker. 
 %	It should be considered 'freeware'- and may be distributed freely 
