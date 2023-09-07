@@ -146,7 +146,11 @@ else
 end
 
 % Goto first frame to be read in
-fseek(fid, byte_offset+int32(frame_start-1)*fsize, 'bof');
+fseek(fid, byte_offset+uint64(frame_start-1)*fsize, 'bof');
+
+if (byte_offset+uint64(frame_start-1)*fsize) == uint64(2^64)
+    disp('WARNING: bytes to skip larger than unit64')
+end
 
 %% Read in frames
 vid=zeros(n,m,frame_N,data_type); % pre-allocation for video
