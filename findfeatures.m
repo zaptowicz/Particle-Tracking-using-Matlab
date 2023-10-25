@@ -19,7 +19,7 @@ function arr = findfeatures(image, extent, varargin)
 %			        centers. The default value is diameter+1.
 %		   masscut: Setting this parameter saves runtime by reducing the
 %			        runtime wasted on low mass 'noise' features.
-%		       min: Set this optional parameter to the minimum allowed
+%		    minpix: Set this optional parameter to the minimum allowed
 %			        value for the peak brightness of a feature. Useful
 %			        for limiting the number of spurious features in
 %			        noisy images.
@@ -44,7 +44,7 @@ function arr = findfeatures(image, extent, varargin)
 %
 % CALLING SEQUENCE:
 %   f = feature(b,1,11)%
-%   f = feature(b,1,11,min=150,quiet='y')%
+%   f = feature(b,1,11,minpix=150,quiet='y')%
 %
 % NOTES :
 %   IDL VERSION
@@ -104,12 +104,15 @@ function arr = findfeatures(image, extent, varargin)
 %   06/08/2023 - K Aptowicz (WCU)
 %       * Translated to MATLAB 
 %       * Tranlation partly based on Blair and Dufresne code
+%   08/14/2023 - K Aptowicz (WCU)
+%       * Changed how minpix is handled. Now scaled to new value when image
+%       is converted pixels values between 0-255 image
 
 %% Reading and setting parameters
 % Set default values for optional parameters
 default_sep = extent+1;
 default_masscut = [];
-default_min = [];
+default_minpix = [];
 default_quiet = [];
 default_iterate = [];
 
@@ -118,7 +121,7 @@ p = inputParser;
 % Variables
 addParameter(p,'separation',default_sep,@isnumeric)
 addParameter(p,'masscut',default_masscut,@isnumeric)
-addParameter(p,'min',default_min,@isnumeric)
+addParameter(p,'min',default_minpix,@isnumeric)
 
 % Keywords
 addOptional(p,'quiet', default_quiet)
@@ -128,7 +131,7 @@ addOptional(p,'iterate', default_iterate)
 parse(p,varargin{:});
 sep = p.Results.separation;
 masscut = p.Results.masscut;
-min = p.Results.min;
+minpix = p.Results.min;
 quiet = p.Results.quiet;
 iterate = p.Results.iterate;
 %% *****************************
@@ -149,10 +152,10 @@ a = zeros(ny+extent+1,nx+extent+1);
 a((extent+1)/2+1:((extent+1)/2)+ny,(extent+1)/2+1:((extent+1)/2)+nx) = image;
 
 %	Finding local maxima
-loc = lmx(a,sep,min);
+loc = lmx(a,sep,minpix);
 
 if loc(1) == -1
-    arr=[];
+    arr=-1;
     disp('FINDFEATURES: No features found.')
     return
 end
@@ -195,6 +198,7 @@ end
 if ~isempty(masscut)
     [w] = find(m > masscut); nmax = numel(w);
     if nmax == 0
+        arr=-1;
         disp('FINDFEATURES: No features found!');
         return
     end
@@ -360,7 +364,7 @@ end
 %	John's version of local_max2, which supports the field keyword
 %	and is otherwise identical.
 %
-function r=lmx(image, sep, min)
+function r=lmx(image, sep, minpix)
 
 range = fix(sep/2);
 a = uint8(rescale(image, 0, 255));
@@ -374,21 +378,24 @@ b = imdilate(a, mask);	% find local maxima in given range
 % but don't include pixels from the
 % background which will be too dim
 
-% If not set, determine min
-if isempty(min)
+% If not set, determine minpix
+if isempty(minpix)
     h = histcounts(a,0:1:256);
 
     for i = 2:numel(h)
         h(i) = h(i) + h(i-1);
     end
     h = single(h)/max(h);
-    min = 1;
-    while h(min) < 0.64
-        min = min + 1;
+    minpix = 1;
+    while h(minpix) < 0.64
+        minpix = minpix + 1;
     end
+else
+minpix=minpix*255/(max(image(:))-min(image(:)));
 end
 
-r = find(a == b & a >= min);
+
+r = find(a == b & a >= minpix);
 
 % Discard maxima within range of the edge
 sz = size(a);
