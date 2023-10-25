@@ -7,10 +7,10 @@ function arr = findfeatures(image, extent, varargin)
 %	an image.
 %
 % INPUT (REQUIRED)
-%           image: (int8) image with 'blubs' to be analyzed
-%        diameter: a parameter which should be a little greater than
+%           image: (int8) image with 'blurbs' to be analyzed
+%          extent: a parameter which should be a little greater than
 %			       the diameter of the largest features in the image.
-%                  Diameter MUST BE ODD valued.
+%                  Extent MUST BE ODD valued.
 %
 % INPUT (OPTIONAL)
 %           noclip: ['y'] Keep all values in output image, even negative values.
