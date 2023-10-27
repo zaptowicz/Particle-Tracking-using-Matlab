@@ -141,8 +141,9 @@ if ischar(stk)
     stk = convertCharsToStrings(stk); % Convert the string if character array
 end
 
+% Analysis of AVI videos
 if isstring(stk)
-    disp("analyzing AVI video file frame by frame.")
+    disp("Analyzing AVI video file frame by frame. Converting to grayscale if RGB")
     v = VideoReader(stk);
     ns = v.NumberOfFrames; % number of frames
     if ns >= 200, rep = 50; end
@@ -160,8 +161,9 @@ if isstring(stk)
             res=[[res];[f,ones(nf,1)*[i]]];
         end
     end
-
 else
+    
+% Analysis of arrays
     ss=size(stk);
     ns = ss(3);
     if ns >= 200, rep = 50; end
