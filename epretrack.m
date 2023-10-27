@@ -125,7 +125,7 @@ if ~isempty(VIF_Info)
     if ~(isfield(VIF_Info,'pix_w') && isfield(VIF_Info,'pix_h'))
         disp('Need size of VIF video frame (pix_w and pix_h) in structure VIF_Info')
     end
-    VIF_input. = 10;
+    VIF_input.frame_N = 10;
     if ~(isfield(VIF_Info,'frame_N'))
         disp('VIF_Info.frame_N not set, so setting to 10')
         VIF_Info.frame_N=10; 
