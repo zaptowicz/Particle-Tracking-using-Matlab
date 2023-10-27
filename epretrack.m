@@ -8,7 +8,8 @@ function res = epretrack(stk, varargin)
 %   determine where particles are located
 %
 % INPUT (REQUIRED)
-%           stk: image or image stack with particles to track
+%              stk: image or image stack with particles to track
+%                   can also be avi file which is analyzed frame by frame
 %
 % INPUT (OPTIONAL)
 %             bplo: ['y'] Keep all values in output image, even negative values.
@@ -17,7 +18,7 @@ function res = epretrack(stk, varargin)
 %			        centers. The default value is diameter+1.
 %		       dia: Setting this parameter saves runtime by reducing the
 %			        runtime wasted on low mass 'noise' features.
-%	           sep: 
+%	           sep:
 %             mass:
 %              min: Set this optional parameter to the minimum allowed
 %			        value for the peak brightness of a feature. Useful
@@ -61,6 +62,8 @@ function res = epretrack(stk, varargin)
 %        some minor errors fixed July 2017% improved "single" keyword
 %  06/12/2023 - K Aptowicz (WCU)
 %       * Translated to MATLAB
+%  10/27/2023 - K Aptowicz (WCU)
+%       * Added ability to read in .avi files (toolbox?)
 
 %% Reading and setting parameters
 % Set default values for optional parameters
@@ -134,28 +137,52 @@ end
 
 rep = 1;
 
-ss=size(stk);
-ns = ss(3);
-if ns >= 200, rep = 50; end
-if ~isempty(first), ns = 1; end  %handy for a quick looksee...
-res = ones(1,6)*(-1);
-
-for i = 1:ns
-    if ((mod((i),rep) == 0) && isempty(quiet))
-        disp(['processing frame ', int2str(i),' out of ',int2str(ns),'....'])
-    end
-    im = bpass(stk(:,:,i),bplo,bphi);
-    massTemp=mass;minTemp=min;quietTemp=quiet;
-    f = findfeatures(im,dia,sep,mass=massTemp,min=minTemp,quiet=quietTemp,quiet='y');
-    nf = numel(f(:,1));
-    if (f(1) ~= -1)
-        res=[[res];[f,ones(nf,1)*[i]]];
-    end
+if ischar(stk)
+    stk = convertCharsToStrings(stk); % Convert the string if character array
 end
 
+if isstring(stk)
+    disp("analyzing AVI video file frame by frame.")
+    v = VideoReader(stk);
+    ns = v.NumberOfFrames; % number of frames
+    if ns >= 200, rep = 50; end
+    if ~isempty(first), ns = 1; end  %handy for a quick looksee...
+    res = ones(1,6)*(-1);
+    for i = 1:ns
+        if ((mod((i),rep) == 0) && isempty(quiet))
+            disp(['processing frame ', int2str(i),' out of ',int2str(ns),'....'])
+        end
+        im = bpass(rgb2gray(read(v,i)),bplo,bphi);
+        massTemp=mass;minTemp=min;quietTemp=quiet;
+        f = findfeatures(im,dia,sep,mass=massTemp,min=minTemp,quiet=quietTemp,quiet='y');
+        nf = numel(f(:,1));
+        if (f(1) ~= -1)
+            res=[[res];[f,ones(nf,1)*[i]]];
+        end
+    end
+
+else
+    ss=size(stk);
+    ns = ss(3);
+    if ns >= 200, rep = 50; end
+    if ~isempty(first), ns = 1; end  %handy for a quick looksee...
+    res = ones(1,6)*(-1);
+    for i = 1:ns
+        if ((mod((i),rep) == 0) && isempty(quiet))
+            disp(['processing frame ', int2str(i),' out of ',int2str(ns),'....'])
+        end
+        im = bpass(stk(:,:,i),bplo,bphi);
+        massTemp=mass;minTemp=min;quietTemp=quiet;
+        f = findfeatures(im,dia,sep,mass=massTemp,min=minTemp,quiet=quietTemp,quiet='y');
+        nf = numel(f(:,1));
+        if (f(1) ~= -1)
+            res=[[res];[f,ones(nf,1)*[i]]];
+        end
+    end
+end
 % If particles were found, remove blank row
-if numel(res(:,1)) > 1 
-	res(1,:)=[];
+if numel(res(:,1)) > 1
+    res(1,:)=[];
 end
 end
 
