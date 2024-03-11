@@ -156,7 +156,9 @@ loc = lmx(a,sep,minpix);
 
 if loc(1) == -1
     arr=-1;
+    if isempty(quiet)
     disp('FINDFEATURES: No features found.')
+    end 
     return
 end
 
@@ -199,7 +201,9 @@ if ~isempty(masscut)
     [w] = find(m > masscut); nmax = numel(w);
     if nmax == 0
         arr=-1;
+        if isempty(quiet)
         disp('FINDFEATURES: No features found!');
+        end
         return
     end
     xl = xl(w);
