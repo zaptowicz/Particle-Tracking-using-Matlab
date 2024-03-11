@@ -86,6 +86,8 @@ function res = epretrack(stk, varargin)
 %       * Translated to MATLAB
 %  10/27/2023 - K Aptowicz (WCU)
 %       * Added ability to read in .avi files (toolbox?)
+%  03/11/2024 - K Aptowicz (WCU)
+%       * Made some edits to variables names and cleaned up header. 
 
 %% Reading and setting parameters
 % Set default values for optional parameters
