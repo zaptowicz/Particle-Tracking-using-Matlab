@@ -16,14 +16,23 @@ function res = epretrack(stk, varargin)
 %                   Discussed below. 
 %
 % INPUT (OPTIONAL)
-%             bplo: ['y'] Keep all values in output image, even negative values.
-%		      bphi: An optional parameter which specifies the
+%             ***** b = bpass(image, bplo, bphi) *****
+%             bplo: High spatial frequnecy cutoff for bpass. Often 1 pixel for
+%                   pixel-to-pixel noise. Sticking with the naming in IDL
+%                   epretrack calling this 'lo'.
+%		      bphi: Low spatial frequency cutoff for bpass. Eliminates slow 
+%                   varations in the image. Often a little larger than 
+%                   feature size.Sticking with the naming in IDL
+%                   epretrack calling this 'hi'.
+%
+%             ****  findfeatures(image, extent, varargin) *****
+%		    extent: a parameter which should be a little greater than
+%			        the diameter of the largest features in the image.
+%                   Extent MUST BE ODD valued.
+%		separation: An optional parameter which specifies the
 %			        minimum allowable separation between feature
-%			        centers. The default value is diameter+1.
-%		       dia: Setting this parameter saves runtime by reducing the
+%             mass: Setting this parameter saves runtime by reducing the
 %			        runtime wasted on low mass 'noise' features.
-%	           sep:
-%             mass:
 %              min: Set this optional parameter to the minimum allowed
 %			        value for the peak brightness of a feature. Useful
 %			        for limiting the number of spurious features in
@@ -55,8 +64,8 @@ function res = epretrack(stk, varargin)
 %		    pt(:,6): frame number
 %
 % CALLING SEQUENCE:
-%   res = epretrack(a,bplo=1,bphi=11,dia=11,mass=10000)
-%   pt_all = epretrack('videofile.vif',bplo=1,bphi=9,dia=11,min=50,VIF_Info=VIF_input);
+%   res = epretrack(a,bplo=1,bphi=11,extent=11,mass=10000)
+%   pt_all = epretrack('videofile.vif',bplo=1,bphi=9,extent=11,min=50,VIF_Info=VIF_input);
 %
 % NOTES :
 %   IDL VERSION
@@ -80,10 +89,10 @@ function res = epretrack(stk, varargin)
 
 %% Reading and setting parameters
 % Set default values for optional parameters
-default_bplo = [];
+default_bplo= [];
 default_bphi = [];
-default_dia = [];
-default_sep = [];
+default_extent = [];
+default_separation = [];
 default_mass = [];
 default_min = [];
 default_first = [];
@@ -95,8 +104,8 @@ p = inputParser;
 % Variables
 addParameter(p,'bplo',default_bplo,@isnumeric)
 addParameter(p,'bphi',default_bphi,@isnumeric)
-addParameter(p,'dia',default_dia,@isnumeric)
-addParameter(p,'sep',default_sep,@isnumeric)
+addParameter(p,'extent',default_extent,@isnumeric)
+addParameter(p,'separation',default_separation,@isnumeric)
 addParameter(p,'mass',default_mass,@isnumeric)
 addParameter(p,'min',default_min,@isnumeric)
 addParameter(p,'VIF_Info',default_VIF_Info)
@@ -107,10 +116,10 @@ addOptional(p,'quiet', default_quiet)
 
 % populate optional parameters from inputs
 parse(p,varargin{:});
-bplo = p.Results.bplo;
+bplo= p.Results.bplo;
 bphi = p.Results.bphi;
-dia = p.Results.dia;
-sep = p.Results.sep;
+extent = p.Results.extent;
+separation = p.Results.separation;
 mass = p.Results.mass;
 min = p.Results.min;
 quiet = p.Results.quiet;
@@ -141,17 +150,17 @@ end
 
 msg='Defaults:';
 if (isempty(bplo))
-    bplo = 1; msg=msg+" bplo=1";
+    bplo= 1; msg=msg+" bplo=1";
 end
 if (isempty(bphi))
     bphi = 5; msg=msg+" bphi=5";
 end
-if (isempty(dia))
-    dia = 9; msg=msg+" dia=9";
+if (isempty(extent))
+    extent = 9; msg=msg+" extent=9";
 end
-if (isempty(sep))
-    sep = dia+1;  %  this is what feature uses as a default
-    msg=msg+" sep-unset";
+if (isempty(separation))
+    separation = extent+1;  %  this is what feature uses as a default
+    msg=msg+" separation-unset";
 end
 if (isempty(min))
     min = 0;
@@ -190,7 +199,7 @@ if isstring(stk)
             end
             im = bpass(rgb2gray(read(v,i)),bplo,bphi);
             massTemp=mass;minTemp=min;quietTemp=quiet;
-            f = findfeatures(im,dia,sep,mass=massTemp,min=minTemp,quiet=quietTemp,quiet='y');
+            f = findfeatures(im,extent,separation,mass=massTemp,min=minTemp,quiet=quietTemp,quiet='y');
             nf = numel(f(:,1));
             if (f(1) ~= -1)
                 res=[[res];[f,ones(nf,1)*[i]]];
@@ -216,7 +225,7 @@ if isstring(stk)
                 bit_10_unpacked = VIF_Info.bit_8);
             im = bpass(im,bplo,bphi);
             massTemp=mass;minTemp=min;quietTemp=quiet;
-            f = findfeatures(im,dia,sep,mass=massTemp,min=minTemp,quiet=quietTemp,quiet='y');
+            f = findfeatures(im,extent,separation,mass=massTemp,min=minTemp,quiet=quietTemp,quiet='y');
             nf = numel(f(:,1));
             if (f(1) ~= -1)
                 res=[[res];[f,ones(nf,1)*[i]]];
@@ -239,7 +248,7 @@ else
         end
         im = bpass(stk(:,:,i),bplo,bphi);
         massTemp=mass;minTemp=min;quietTemp=quiet;
-        f = findfeatures(im,dia,sep,mass=massTemp,min=minTemp,quiet=quietTemp,quiet='y');
+        f = findfeatures(im,extent,separation,mass=massTemp,min=minTemp,quiet=quietTemp,quiet='y');
         nf = numel(f(:,1));
         if (f(1) ~= -1)
             res=[[res];[f,ones(nf,1)*[i]]];
