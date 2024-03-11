@@ -8,20 +8,20 @@ function res = epretrack(stk, varargin)
 %   determine where particles are located
 %
 % INPUT (REQUIRED)
-%              stk: Three options are currently coded: 
+%              stk: Three options are currently coded:
 %                   (1) stk is an array (2D if single image or 3D if image stack)
-%                   (2) stk is the filename of an avi file to read in 
+%                   (2) stk is the filename of an avi file to read in
 %                   (3) stk is a VIF file (EPIX).  If this is used, also
 %                   need to input parameter into the variable VIF.Info.
-%                   Discussed below. 
+%                   Discussed below.
 %
 % INPUT (OPTIONAL)
 %             ***** b = bpass(image, bplo, bphi) *****
 %             bplo: High spatial frequnecy cutoff for bpass. Often 1 pixel for
 %                   pixel-to-pixel noise. Sticking with the naming in IDL
 %                   epretrack calling this 'lo'.
-%		      bphi: Low spatial frequency cutoff for bpass. Eliminates slow 
-%                   varations in the image. Often a little larger than 
+%		      bphi: Low spatial frequency cutoff for bpass. Eliminates slow
+%                   varations in the image. Often a little larger than
 %                   feature size.Sticking with the naming in IDL
 %                   epretrack calling this 'hi'.
 %
@@ -42,7 +42,7 @@ function res = epretrack(stk, varargin)
 %            first:
 %            fskip:
 %         VIF_Info: structure containing information needed to read in VIF files.
-%                   Example: 
+%                   Example:
 %                       VIF_input.pix_w = 658;
 %                       VIF_input.pix_h = 494;
 %                       VIF_input.frame_N = 10;
@@ -87,7 +87,8 @@ function res = epretrack(stk, varargin)
 %  10/27/2023 - K Aptowicz (WCU)
 %       * Added ability to read in .avi files (toolbox?)
 %  03/11/2024 - K Aptowicz (WCU)
-%       * Made some edits to variables names and cleaned up header. 
+%       * Made some edits to variables names and cleaned up header.
+%       * Added the ability to read in multiple image files.
 
 %% Reading and setting parameters
 % Set default values for optional parameters
@@ -139,7 +140,7 @@ if ~isempty(VIF_Info)
     VIF_input.frame_N = 10;
     if ~(isfield(VIF_Info,'frame_N'))
         disp('VIF_Info.frame_N not set, so setting to 10')
-        VIF_Info.frame_N=10; 
+        VIF_Info.frame_N=10;
     end
     if ~(isfield(VIF_Info,'byte_offset')), VIF_Info.byte_offset=[]; end
     if ~(isfield(VIF_Info,'byte_spacing')), VIF_Info.byte_spacing=[]; end
@@ -180,26 +181,43 @@ if (isempty(quiet))
     end
 end
 
-rep = 1;
-
+% Determine if user is supplying matlab array or filename(s)
 if ischar(stk)
     stk = string(stk); % Convert the string if character array
 end
 
-% Analysis of AVI videos
 if isstring(stk)
+    filen = dir(stk);
+    nfiles = length(filen);
+    if nfiles == 0
+        disp (['No files found for ',stk])
+    end
+    usingfiles = 1;
+else
+    nfiles = 1
+    usingfiles = 0
+end
+
+rep = 1;
+res = ones(1,6)*(-1); % Initialize result array
+
+% Using Filenames
+if usingfiles == 1
+    % Analysis of SINGLE AVI video
     if endsWith(stk,'avi','IgnoreCase',true)
         disp("Analyzing AVI video file frame by frame. Converting to grayscale if RGB")
         v = VideoReader(stk);
         ns = v.NumberOfFrames; % number of frames
         if ns >= 200, rep = 50; end
         if ~isempty(first), ns = 1; end  %handy for a quick looksee...
-        res = ones(1,6)*(-1);
         for i = 1:ns
             if ((mod((i),rep) == 0) && isempty(quiet))
                 disp(['processing frame ', int2str(i),' out of ',int2str(ns),'....'])
             end
-            im = bpass(rgb2gray(read(v,i)),bplo,bphi);
+            im = rgb2gray(read(v,i));
+
+            % *** Common Code Repeated Below ***
+            im = bpass(im,bplo,bphi);
             massTemp=mass;minTemp=min;quietTemp=quiet;
             f = findfeatures(im,extent,separation,mass=massTemp,min=minTemp,quiet=quietTemp,quiet='y');
             nf = numel(f(:,1));
@@ -207,12 +225,13 @@ if isstring(stk)
                 res=[[res];[f,ones(nf,1)*[i]]];
             end
         end
+
+        % Analysis of SINGLE VIF video
     elseif endsWith(stk,'vif','IgnoreCase',true)
         disp("Analyzing VIF video file frame by frame.")
         ns = VIF_Info.frame_N; % number of frames
         if ns >= 200, rep = 50; end
         if ~isempty(first), ns = 1; end  %handy for a quick looksee...
-        res = ones(1,6)*(-1);
         for i = 1:ns
             if ((mod((i),rep) == 0) && isempty(quiet))
                 disp(['processing frame ', int2str(i),' out of ',int2str(ns),'....'])
@@ -225,6 +244,8 @@ if isstring(stk)
                 bit_10_packed = VIF_Info.bit_10_packed, ...
                 bit_10_unpacked = VIF_Info.bit_10_unpacked, ...
                 bit_10_unpacked = VIF_Info.bit_8);
+
+            % *** Common Code ***
             im = bpass(im,bplo,bphi);
             massTemp=mass;minTemp=min;quietTemp=quiet;
             f = findfeatures(im,extent,separation,mass=massTemp,min=minTemp,quiet=quietTemp,quiet='y');
@@ -233,21 +254,37 @@ if isstring(stk)
                 res=[[res];[f,ones(nf,1)*[i]]];
             end
         end
+
+        % Analysis of MULTIPLE image files
     else
-        disp('Cannot process: Expecting .vif or .avi file formats')
+        for i = 1:nfiles
+            if ((mod((i),rep) == 0) && isempty(quiet))
+                disp(['processing frame ', int2str(i),' out of ',int2str(nfiles),'....']);
+            end
+            im = imread(filen(i).name);
+
+            % *** Common Code ***
+            im = bpass(im,bplo,bphi);
+            massTemp=mass;minTemp=min;quietTemp=quiet;
+            f = findfeatures(im,extent,separation,mass=massTemp,min=minTemp,quiet=quietTemp,quiet='y');
+            nf = numel(f(:,1));
+            if (f(1) ~= -1)
+                res=[[res];[f,ones(nf,1)*[i]]];
+            end
+        end
     end
 else
-
-    % Analysis of arrays
+    % Analysis of matlab array
     ss=size(stk);
     ns = ss(3);
     if ns >= 200, rep = 50; end
     if ~isempty(first), ns = 1; end  %handy for a quick looksee...
-    res = ones(1,6)*(-1);
     for i = 1:ns
         if ((mod((i),rep) == 0) && isempty(quiet))
             disp(['processing frame ', int2str(i),' out of ',int2str(ns),'....'])
         end
+
+        % *** Common Code ***
         im = bpass(stk(:,:,i),bplo,bphi);
         massTemp=mass;minTemp=min;quietTemp=quiet;
         f = findfeatures(im,extent,separation,mass=massTemp,min=minTemp,quiet=quietTemp,quiet='y');
@@ -257,6 +294,7 @@ else
         end
     end
 end
+
 % If particles were found, remove blank row
 if numel(res(:,1)) > 1
     res(1,:)=[];
