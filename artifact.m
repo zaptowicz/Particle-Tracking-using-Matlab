@@ -3,8 +3,9 @@ function rho = artifact(img, bphi, extent, varargin)
 %   artifact
 %
 % DESCRIPTION:
-%   Determines optical artifact when particles approach each other. Assumed
-%   images are particles approaching each other can be superimposed.
+%   Determines optical artifact when particles approach each other. Assumes
+%   images of particles approaching each other can be superimposed to 
+%   represent optical imaging.
 %
 % INPUT (REQUIRED)
 %             img: Image of dilute particles to be analyzed
