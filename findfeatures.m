@@ -7,16 +7,16 @@ function arr = findfeatures(image, extent, varargin)
 %	an image.
 %
 % INPUT (REQUIRED)
-%           image: (int8) image with 'blurbs' to be analyzed
-%          extent: a parameter which should be a little greater than
-%			       the diameter of the largest features in the image.
-%                  Extent MUST BE ODD valued. Searches for local maximums. 
+%            image: (int8) image with 'blurbs' to be analyzed
+%           extent: a parameter which should be a little greater than
+%			        the diameter of the largest features in the image.
+%                   Extent MUST BE ODD valued. Searches for local maximums.
 %
 % INPUT (OPTIONAL)
 %           noclip: ['y'] Keep all values in output image, even negative values.
-%		separation: An optional parameter which specifies the
+%		       sep: An optional parameter which specifies the
 %			        minimum allowable separation between feature
-%			        centers. The default value is diameter+1.
+%			        centers. The default value is extent+1.
 %		   masscut: Setting this parameter saves runtime by reducing the
 %			        runtime wasted on low mass 'noise' features.
 %		    minpix: Set this optional parameter to the minimum allowed
@@ -102,7 +102,7 @@ function arr = findfeatures(image, extent, varargin)
 %   05/??/1996 - John C. Crocker
 %		* Added many keywords
 %   06/08/2023 - K Aptowicz (WCU)
-%       * Translated to MATLAB 
+%       * Translated to MATLAB
 %       * Tranlation partly based on Blair and Dufresne code
 %   08/14/2023 - K Aptowicz (WCU)
 %       * Changed how minpix is handled. Now scaled to new value when image
@@ -119,7 +119,7 @@ default_iterate = [];
 % Create fields for all optionals inputs
 p = inputParser;
 % Variables
-addParameter(p,'separation',default_sep,@isnumeric)
+addParameter(p,'sep',default_sep,@isnumeric)
 addParameter(p,'masscut',default_masscut,@isnumeric)
 addParameter(p,'min',default_minpix,@isnumeric)
 
@@ -129,11 +129,18 @@ addOptional(p,'iterate', default_iterate)
 
 % populate optional parameters from inputs
 parse(p,varargin{:});
-sep = p.Results.separation;
+sep = p.Results.sep;
 masscut = p.Results.masscut;
 minpix = p.Results.min;
 quiet = p.Results.quiet;
 iterate = p.Results.iterate;
+
+% Check if using is incorrectly stating input arguments
+if mod(size(varargin,2),2)
+    disp('FINDFEATURES: Issue with input arguments. Not paired.' )
+    disp('FINDFEATURES: sep might be declared incorrectly ... see header (sep = #).' )
+    disp('FINDFEATURES: Do not trust results.' )
+end
 %% *****************************
 
 %% beginning of IDL feature function
@@ -148,8 +155,9 @@ ny = sz(1);
 nx = sz(2);
 
 %	Put a border around the image to prevent mask out-of-bounds
-a = zeros(ny+extent+1,nx+extent+1);
-a((extent+1)/2+1:((extent+1)/2)+ny,(extent+1)/2+1:((extent+1)/2)+nx) = image;
+a = zeros(ny+extent,nx+extent);
+a((extent-1)/2+1:(extent-1)/2+ny,(extent-1)/2+1:(extent-1)/2+nx) = image;
+% nx = nx + extent; In orginal IDL, not sure why.
 
 %	Finding local maxima
 loc = lmx(a,sep,minpix);
@@ -157,8 +165,8 @@ loc = lmx(a,sep,minpix);
 if loc(1) == -1
     arr=-1;
     if isempty(quiet)
-    disp('FINDFEATURES: No features found.')
-    end 
+        disp('FINDFEATURES: No features found.')
+    end
     return
 end
 
@@ -202,7 +210,7 @@ if ~isempty(masscut)
     if nmax == 0
         arr=-1;
         if isempty(quiet)
-        disp('FINDFEATURES: No features found!');
+            disp('FINDFEATURES: No features found!');
         end
         return
     end
@@ -295,8 +303,12 @@ for i=1:nmax
 end
 
 arr = [x,y,m,rg,e];
+arr = sortrows(arr,2); % To match IDL result
 end
 
+%
+%
+%
 %% rsqd function
 function r2 = rsqd(w,h)
 r2 = zeros(w,h);
@@ -371,7 +383,11 @@ end
 function r=lmx(image, sep, minpix)
 
 range = fix(sep/2);
-a = uint8(rescale(image, 0, 255));
+
+% Needed the following code to mimic bytscl function in IDL
+imax=max(image(:)); imin=min(image(:));
+a=uint8(floor((255+0.9999)*(image-imin)/(imax-imin)));
+
 w = round(2*range+1);	% width of sample region
 s = rsqd(w,w);			% sample region is circular
 good = s <= range.^2;
@@ -395,7 +411,7 @@ if isempty(minpix)
         minpix = minpix + 1;
     end
 else
-minpix=minpix*255/(max(image(:))-min(image(:)));
+    minpix=minpix*255/(max(image(:))-min(image(:)));
 end
 
 
