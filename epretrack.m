@@ -40,9 +40,7 @@ function res = epretrack(stk, varargin)
 %			        for limiting the number of spurious features in
 %			        noisy images.
 %		     quiet:	['y'] Surpress printing of informational messages.
-%           prefix:
 %            first: ['y'] Just look at first image (first frame). 
-%            fskip:
 %         VIF_Info: structure containing information needed to read in VIF files.
 %                   Example:
 %                       VIF_input.pix_w = 658;
