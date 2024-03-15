@@ -8,12 +8,14 @@ function res = epretrack(stk, varargin)
 %   determine where particles are located
 %
 % INPUT (REQUIRED)
-%              stk: Three options are currently coded:
+%              stk: Four options are currently coded:
 %                   (1) stk is an array (2D if single image or 3D if image stack)
 %                   (2) stk is the filename of an avi file to read in
 %                   (3) stk is a VIF file (EPIX).  If this is used, also
 %                   need to input parameter into the variable VIF.Info.
 %                   Discussed below.
+%                   (4) stk is a '*.tif".  This will analyze all TIFF
+%                   images in a folder and create a single pt file. 
 %
 % INPUT (OPTIONAL)
 %             ***** b = bpass(image, bplo, bphi) *****
@@ -29,7 +31,7 @@ function res = epretrack(stk, varargin)
 %		    extent: a parameter which should be a little greater than
 %			        the diameter of the largest features in the image.
 %                   Extent MUST BE ODD valued.
-%		separation: An optional parameter which specifies the
+%		       sep: An optional parameter which specifies the
 %			        minimum allowable separation between feature
 %             mass: Setting this parameter saves runtime by reducing the
 %			        runtime wasted on low mass 'noise' features.
@@ -37,9 +39,9 @@ function res = epretrack(stk, varargin)
 %			        value for the peak brightness of a feature. Useful
 %			        for limiting the number of spurious features in
 %			        noisy images.
-%		     quiet:	['y'] Supress printing of informational messages.
+%		     quiet:	['y'] Surpress printing of informational messages.
 %           prefix:
-%            first:
+%            first: ['y'] Just look at first image (first frame). 
 %            fskip:
 %         VIF_Info: structure containing information needed to read in VIF files.
 %                   Example:
@@ -64,8 +66,18 @@ function res = epretrack(stk, varargin)
 %		    pt(:,6): frame number
 %
 % CALLING SEQUENCE:
-%   res = epretrack(a,bplo=1,bphi=11,extent=11,mass=10000)
-%   pt_all = epretrack('videofile.vif',bplo=1,bphi=9,extent=11,min=50,VIF_Info=VIF_input);
+%   Matlab array ... 
+%       pt_all = epretrack(a,bplo=1,bphi=11,extent=13, sep=17, mass=10000)
+%
+%   VIF file ... 
+%       (See VIF_Info structure above.)
+%       pt_all = epretrack('videofile.vif',bplo=1, bphi=11, extent=13, sep=17, VIF_Info=VIF_input);
+%
+%   AVI video
+%       pt_all = epretrack('videofile.avi',bplo=1, bphi=11, extent=13, sep=17, mass=2500);
+%
+%   TIFF images
+%       pt_all = epretrack('*.tif',bplo=1, bphi=11, extent=13, sep=17, mass=2500);
 %
 % NOTES :
 %   IDL VERSION
@@ -89,13 +101,16 @@ function res = epretrack(stk, varargin)
 %  03/11/2024 - K Aptowicz (WCU)
 %       * Made some edits to variables names and cleaned up header.
 %       * Added the ability to read in multiple image files.
+%  03/15/2024 - K Aptowicz (WCU)
+%       * Made changes to how 'sep' is called in findfeatures and updated
+%       epretrack to match
 
 %% Reading and setting parameters
 % Set default values for optional parameters
 default_bplo= [];
 default_bphi = [];
 default_extent = [];
-default_separation = [];
+default_sep = [];
 default_mass = [];
 default_min = [];
 default_first = [];
@@ -108,7 +123,7 @@ p = inputParser;
 addParameter(p,'bplo',default_bplo,@isnumeric)
 addParameter(p,'bphi',default_bphi,@isnumeric)
 addParameter(p,'extent',default_extent,@isnumeric)
-addParameter(p,'separation',default_separation,@isnumeric)
+addParameter(p,'sep',default_sep,@isnumeric)
 addParameter(p,'mass',default_mass,@isnumeric)
 addParameter(p,'min',default_min,@isnumeric)
 addParameter(p,'VIF_Info',default_VIF_Info)
@@ -122,7 +137,7 @@ parse(p,varargin{:});
 bplo= p.Results.bplo;
 bphi = p.Results.bphi;
 extent = p.Results.extent;
-separation = p.Results.separation;
+sep = p.Results.sep;
 mass = p.Results.mass;
 min = p.Results.min;
 quiet = p.Results.quiet;
@@ -161,9 +176,9 @@ end
 if (isempty(extent))
     extent = 9; msg=msg+" extent=9";
 end
-if (isempty(separation))
-    separation = extent+1;  %  this is what feature uses as a default
-    msg=msg+" separation-unset";
+if (isempty(sep))
+    sep = extent+1;  %  this is what feature uses as a default
+    msg=msg+" sep-unset";
 end
 if (isempty(min))
     min = 0;
@@ -201,6 +216,9 @@ end
 rep = 1;
 res = ones(1,6)*(-1); % Initialize result array
 
+% Prep variables to set in functions.  
+massTemp=mass;minTemp=min;quietTemp=quiet; sepTemp=sep; 
+
 % Using Filenames
 if usingfiles == 1
     % Analysis of SINGLE AVI video
@@ -218,8 +236,7 @@ if usingfiles == 1
 
             % *** Common Code Repeated Below ***
             im = bpass(im,bplo,bphi);
-            massTemp=mass;minTemp=min;quietTemp=quiet;
-            f = findfeatures(im,extent,separation,mass=massTemp,min=minTemp,quiet=quietTemp,quiet='y');
+            f = findfeatures(im,extent,sep=sepTemp,mass=massTemp,min=minTemp,quiet=quietTemp,quiet='y');
             nf = numel(f(:,1));
             if (f(1) ~= -1)
                 res=[[res];[f,ones(nf,1)*[i]]];
@@ -248,7 +265,7 @@ if usingfiles == 1
             % *** Common Code ***
             im = bpass(im,bplo,bphi);
             massTemp=mass;minTemp=min;quietTemp=quiet;
-            f = findfeatures(im,extent,separation,mass=massTemp,min=minTemp,quiet=quietTemp,quiet='y');
+            f = findfeatures(im,extent,sep=sepTemp,mass=massTemp,min=minTemp,quiet=quietTemp,quiet='y');
             nf = numel(f(:,1));
             if (f(1) ~= -1)
                 res=[[res];[f,ones(nf,1)*[i]]];
@@ -259,14 +276,13 @@ if usingfiles == 1
     else
         for i = 1:nfiles
             if ((mod((i),rep) == 0) && isempty(quiet))
-                disp(['processing frame ', int2str(i),' out of ',int2str(nfiles),'....']);
+                disp(['processing frame ', int2str(i),' out of ',int2str(nfiles),'....'])
             end
             im = imread(filen(i).name);
 
             % *** Common Code ***
             im = bpass(im,bplo,bphi);
-            massTemp=mass;minTemp=min;quietTemp=quiet;
-            f = findfeatures(im,extent,separation,mass=massTemp,min=minTemp,quiet=quietTemp,quiet='y');
+            f = findfeatures(im,extent,sep=sepTemp,mass=massTemp,min=minTemp,quiet=quietTemp,quiet='y');
             nf = numel(f(:,1));
             if (f(1) ~= -1)
                 res=[[res];[f,ones(nf,1)*[i]]];
@@ -286,8 +302,7 @@ else
 
         % *** Common Code ***
         im = bpass(stk(:,:,i),bplo,bphi);
-        massTemp=mass;minTemp=min;quietTemp=quiet;
-        f = findfeatures(im,extent,separation,mass=massTemp,min=minTemp,quiet=quietTemp,quiet='y');
+        f = findfeatures(im,extent,sep=sepTemp,mass=massTemp,min=minTemp,quiet=quietTemp,quiet='y');
         nf = numel(f(:,1));
         if (f(1) ~= -1)
             res=[[res];[f,ones(nf,1)*[i]]];
