@@ -6,9 +6,22 @@ function write_gdf(data, file, varargin)
 %   It has NOT been thoroughly tested. As bugs are dealt with, updates will be
 %   posted.
 %
+% IDL FORMAT: 
+%   Header consists of the following lines: 
+%       long MAGIC number (082991) (ise to check system format)
+%       long array of IDL function size of data (number of dimensions, length of each dimension, number type, number of elements)
+%       data using data type of data (eg. byte, long, float) 
+% 		
+%       If the file is ASCII, the header tag is an identifying
+% 		statement, followed by all of the same information in
+% 	    ASCII format.
+%
 % MODIFICATION HISTORY:
 %   Translated by Kevin Aptowicz, WCU 10/'22
-%   Adapted by XXXX: XX/'XX; XXXXXXX
+%       EDITS:
+%       03/17/2024 - KBA (WCU)
+%           - Edits made so that format more closely matches IDL
+%           - Can write IDL formats: BYTE, INT, LONG, FLOAT, and DOUBLE
 %
 % ;+
 % ; NAME:
@@ -58,30 +71,49 @@ addOptional(p,'ascii', default_ascii);
 parse(p,varargin{:});
 ascii = p.Results.ascii;
 
+%% Prepare header
+% Fix issues with Data
+if numel(size(data)) == 2
+    data=data'; % to match IDL preferred format of array(coln, row)
+end
+
+% Prepare header
 MAGIC = int32(082991);
 HEADER = "GDF v. 1.0";
 fileID = fopen(file,'w');
 sz = size(data);
+type = class(data);
 
-% Tweak to match IDL format of array(coln,row) rather than array(row,coln)
-if length(sz) == 2 % 2D array
-    data=data'; % to match IDL preferred format of array(coln, row)
-    sz2 = [fliplr(sz),[-1,0]]; % Use to identify Matlab created array
-else
-    sz2 = [sz,[-1,0]]; % Use to identify Matlab created array
+% Determine number if IDL data type
+switch type
+    case 'uint8'
+        i=1; 
+    case 'int16'
+        i=2;
+    case 'int32'
+        i=3;
+    case 'single'
+        i=4
+    case 'double'
+        i=5
+    otherwise
+        disp('WRITE_GDF: Data type not programmed for write_gdf')
 end
 
-if ~isempty(ascii)
+IDL_size = [length(sz), sz, i, numel(data)]; % Use to identify Matlab created array
+IDL_size = int32(IDL_size); % Make sure it is in LONG format for IDL
+
+%% Write to file
+if ~isempty(ascii) % If ASCII
     fprintf(fileID, '%s\n',HEADER);
-    fprintf(fileID,'%i\n',length(sz));
-    fprintf(fileID,'%i ',sz2);
+    fprintf(fileID,'%i\n',IDL_size(1));
+    fprintf(fileID,'%i ',IDL_size(2:end));
     fprintf(fileID,'\n');
     fprintf(fileID, '%f\n', data);
 else
     fwrite(fileID, MAGIC,'long');
-    fwrite(fileID, length(sz),'long');
-    fwrite(fileID, sz2,'long');
-    fwrite(fileID, data,'single');
+    fwrite(fileID, IDL_size,'long');
+    fwrite(fileID, data, type);
 end
 fclose(fileID);
 end

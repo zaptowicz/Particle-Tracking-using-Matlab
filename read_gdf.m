@@ -8,7 +8,10 @@ function res = read_gdf(filespec)
 %
 % MODIFICATION HISTORY:
 %   Translated by Kevin Aptowicz, WCU 10/'22
-%   Adapted by XXXX: XX/'XX; XXXXXXX
+%   EDITS:
+%       03/15/2024 - KBA (WCU)
+%           - Fixed issue with reading different types of data formats. Now
+%           can handle uint8, int16, int32, single, and double
 %
 % ;+
 % ; NAME:
@@ -85,15 +88,32 @@ else
         dim = fscanf(fid,'%i',sz); % array of dimension
         check = fscanf(fid,'%i',2); % Check if Matlab array
         res = fscanf(fid,'%f',Inf); % single vector of data
-        res = reshape(res,dim');
+        if sz > 1
+            res = reshape(res,dim');
+        end
     else
         frewind(fid)
         mgc = fread(fid,1,'long'); % Grier MAGIC
         sz = fread(fid,1,'long'); % number of dimensions
         dim = fread(fid,sz,'long'); % array of dimension
-        check = fread(fid,2,'long'); % Check if Matlab array
-        res = fread(fid,Inf,'single'); % single vector of data
-        res = reshape(res,dim');
+        type = fread(fid,1,'long'); % format
+        N = fread(fid,1,'long'); % number of elements
+        if type == 1 % IDL 'byte' -  8-bit unsigned interger
+            res = fread(fid,N,'uint8'); % single vector of data
+        elseif type == 2 % IDL 'int'  -  16-bit signed interger
+            res = fread(fid,N,'int16'); % single vector of data
+        elseif type == 3 % IDL 'long'  -  32-bit signed interger
+            res = fread(fid,N,'int32'); % single vector of data
+        elseif type == 4 % IDL 'float'  -  32-bit single-precision
+            res = fread(fid,N,'single'); % single vector of data
+        elseif type == 5 % IDL 'double' -  64-bit single-precision
+            res = fread(fid,N,'double'); % single vector of data
+        else
+            disp('READ_GDF: Data type from IDL not programmed')
+        end
+        if sz > 1
+            res = reshape(res,dim');
+        end
     end
     if sz == 2 % 2D array
         res=res'; % flip from idl array(col,row) to matlab array(row,col)
