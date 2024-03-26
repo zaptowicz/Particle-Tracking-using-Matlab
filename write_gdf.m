@@ -93,9 +93,9 @@ switch type
     case 'int32'
         i=3;
     case 'single'
-        i=4
+        i=4;
     case 'double'
-        i=5
+        i=5;
     otherwise
         disp('WRITE_GDF: Data type not programmed for write_gdf')
 end
