@@ -15,7 +15,7 @@ function res = epretrack(stk, varargin)
 %                   need to input parameter into the variable VIF.Info.
 %                   Discussed below.
 %                   (4) stk is a '*.tif".  This will analyze all TIFF
-%                   images in a folder and create a single pt file. 
+%                   images in a folder and create a single pt file.
 %
 % INPUT (OPTIONAL)
 %             ***** b = bpass(image, bplo, bphi) *****
@@ -40,7 +40,7 @@ function res = epretrack(stk, varargin)
 %			        for limiting the number of spurious features in
 %			        noisy images.
 %		     quiet:	['y'] Surpress printing of informational messages.
-%            first: ['y'] Just look at first image (first frame). 
+%            first: ['y'] Just look at first image (first frame).
 %         VIF_Info: structure containing information needed to read in VIF files.
 %                   Example:
 %                       VIF_input.pix_w = 658;
@@ -64,10 +64,10 @@ function res = epretrack(stk, varargin)
 %		    pt(:,6): frame number
 %
 % CALLING SEQUENCE:
-%   Matlab array ... 
+%   Matlab array ...
 %       pt_all = epretrack(a,bplo=1,bphi=11,extent=13, sep=17, mass=10000)
 %
-%   VIF file ... 
+%   VIF file ...
 %       (See VIF_Info structure above.)
 %       pt_all = epretrack('videofile.vif',bplo=1, bphi=11, extent=13, sep=17, VIF_Info=VIF_input);
 %
@@ -211,11 +211,13 @@ else
     usingfiles = 0
 end
 
-rep = 1;
+rep = 1; % for displaying messages
+remove = 0; % For displaying messages
+
 res = ones(1,6)*(-1); % Initialize result array
 
-% Prep variables to set in functions.  
-massTemp=mass;minTemp=min;quietTemp=quiet; sepTemp=sep; 
+% Prep variables to set in functions.
+massTemp=mass;minTemp=min;quietTemp=quiet; sepTemp=sep;
 
 % Using Filenames
 if usingfiles == 1
@@ -228,7 +230,15 @@ if usingfiles == 1
         if ~isempty(first), ns = 1; end  %handy for a quick looksee...
         for i = 1:ns
             if ((mod((i),rep) == 0) && isempty(quiet))
-                disp(['processing frame ', int2str(i),' out of ',int2str(ns),'....'])
+                if remove == 1
+                    reverseStr = repmat(sprintf('\b'), 1, N_rm);
+                else
+                    reverseStr = [];
+                    remove = 1;
+                end
+                disp_string = ['processing frame ', int2str(i),' out of ',int2str(ns),' ...'];
+                disp([reverseStr,disp_string]);
+                N_rm = length(disp_string)+1;
             end
             im = rgb2gray(read(v,i));
 
@@ -249,7 +259,15 @@ if usingfiles == 1
         if ~isempty(first), ns = 1; end  %handy for a quick looksee...
         for i = 1:ns
             if ((mod((i),rep) == 0) && isempty(quiet))
-                disp(['processing frame ', int2str(i),' out of ',int2str(ns),'....'])
+                if remove == 1
+                    reverseStr = repmat(sprintf('\b'), 1, N_rm);
+                else
+                    reverseStr = [];
+                    remove = 1;
+                end
+                disp_string = ['processing frame ', int2str(i),' out of ',int2str(ns),' ...'];
+                disp([reverseStr,disp_string]);
+                N_rm = length(disp_string)+1;
             end
             im = read_vif(stk,VIF_Info.pix_w,VIF_Info.pix_h, ...
                 frame_start=i,frame_N=1, ...
@@ -272,9 +290,21 @@ if usingfiles == 1
 
         % Analysis of MULTIPLE image files
     else
-        for i = 1:nfiles
+        disp("Analyzing multiple image files frame by frame.")
+        ns = nfiles; % number of frames
+        if ns >= 200, rep = 50; end
+        if ~isempty(first), ns = 1; end  %handy for a quick looksee...
+        for i = 1:ns
             if ((mod((i),rep) == 0) && isempty(quiet))
-                disp(['processing frame ', int2str(i),' out of ',int2str(nfiles),'....'])
+                if remove == 1
+                    reverseStr = repmat(sprintf('\b'), 1, N_rm);
+                else
+                    reverseStr = [];
+                    remove = 1;
+                end
+                disp_string = ['processing frame ', int2str(i),' out of ',int2str(ns),' ...'];
+                disp([reverseStr,disp_string]);
+                N_rm = length(disp_string)+1;
             end
             im = imread(filen(i).name);
 
@@ -295,7 +325,15 @@ else
     if ~isempty(first), ns = 1; end  %handy for a quick looksee...
     for i = 1:ns
         if ((mod((i),rep) == 0) && isempty(quiet))
-            disp(['processing frame ', int2str(i),' out of ',int2str(ns),'....'])
+            if remove == 1
+                reverseStr = repmat(sprintf('\b'), 1, N_rm);
+            else
+                reverseStr = [];
+                remove = 1;
+            end
+            disp_string = ['processing frame ', int2str(i),' out of ',int2str(ns),' ...'];
+            disp([reverseStr,disp_string]);
+            N_rm = length(disp_string)+1;
         end
 
         % *** Common Code ***
