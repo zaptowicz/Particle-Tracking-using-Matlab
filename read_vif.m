@@ -96,7 +96,7 @@ n = pix_h;
 % Calculating byte_spacing (padding)
 % Frames are saved to disk sectors of 512 bytes
 if isempty(byte_spacing)
-    disp('Setting byte_spacing to pad frames to interger*512 bytes.')
+%    disp('Setting byte_spacing to pad frames to interger*512 bytes.')
     if ~isempty(bit_10_packed)
         byte_spacing = 512*ceil((m*n*5/4+72)/512)-m*n*5/4;
     elseif ~isempty(bit_10_unpacked)
@@ -104,13 +104,13 @@ if isempty(byte_spacing)
     else
         byte_spacing = 512*ceil((m*n+72)/512)-m*n;
     end
-    disp(['...... byte_spacing = ',int2str(byte_spacing),' bytes'])
+%    disp(['...... byte_spacing = ',int2str(byte_spacing),' bytes'])
 end
 
 % Read in file
 finfo=dir(filename);
 if size(finfo,1) == 0
-    disp(['No files matched specification ',filespec])
+    disp(['Filename not found.',filespec])
 else
     fid = fopen(finfo(1).name);
 end
@@ -118,7 +118,7 @@ end
 % Determine maximum number of frames
 Nbytes=finfo.bytes;
 if ~isempty(bit_10_packed)
-    disp('Reading a packed video file was never tested!')
+    % Reading a packed video file was never tested!
     if mod(m*n*5/4,1) ~= 0
         disp('Issue with bitpacking. pix_w*pix_h*10bit/8bit result in non-interger number of bytes.')
     end
