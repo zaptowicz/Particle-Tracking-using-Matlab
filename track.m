@@ -9,18 +9,18 @@ function res = track(xyzs, maxdisp, varargin)
 %	consecutive video frames).
 %
 % INPUT (REQUIRED)
-%	  positionlist: an array listing the scrambled coordinates and data 
+%	  positionlist: an array listing the scrambled coordinates and data
 %		            of the different particles at different times, such that:
 %	                positionlist[:,1:d] contains the d coordinates and
 %		            data for all the particles, at the different times.
-%	                positionlist[:,d+1] contains the time t that the position 
-%		            was determined (e.g. frame number). These values must 
+%	                positionlist[:,d+1] contains the time t that the position
+%		            was determined (e.g. frame number). These values must
 %                   be monotonically increasing and uniformly gridded in time.
-%	       maxdisp: an estimate of the maximum distance that a particle 
+%	       maxdisp: an estimate of the maximum distance that a particle
 %		            would move in a single time interval.(see Restrictions)
 %
 % INPUT (OPTIONAL)
-%	        inipos: if the user wants to track only a subset of the 
+%	        inipos: if the user wants to track only a subset of the
 %		            particles, this argument is set to an array (d,n)
 %		            which contains the d dimensional initial positions of
 %		            the n particles to be tracked. Other 'new' particles
@@ -38,7 +38,7 @@ function res = track(xyzs, maxdisp, varargin)
 %		            and the extra data in positionlist[:,dim+1:d]. It is then
 %		            necessary to set dim equal to the dimensionality of the
 %		            coordinate data to so that the track knows to ignore the
-%		            non-coordinate data in the construction of the 
+%		            non-coordinate data in the construction of the
 %		            trajectories. The default value is two.
 %	       verbose: [y] set this keyword for more informational messages.
 %	    goodenough: set this keyword to eliminate all trajectories with
@@ -46,22 +46,22 @@ function res = track(xyzs, maxdisp, varargin)
 %		            for eliminating very short, mostly 'lost' trajectories
 %		            due to blinking 'noise' particles in the data stream.
 %            quiet: [y] use to not print any messages
-%             
+%
 % OUTPUT:
-%	        result: a list containing the original data rows sorted 
-%		            into a series of trajectories.  To the original input 
-%		            data structure there is appended an additional column 
-%		            containing a unique 'id number' for each identified 
-%		            particle trajectory.  The result array is sorted so 
-%		            rows with corresponding id numbers are in contiguous 
+%	        result: a list containing the original data rows sorted
+%		            into a series of trajectories.  To the original input
+%		            data structure there is appended an additional column
+%		            containing a unique 'id number' for each identified
+%		            particle trajectory.  The result array is sorted so
+%		            rows with corresponding id numbers are in contiguous
 %		            blocks, with the time variable a monotonically
 %		            increasing function inside each block.  For example:
-%		
+%
 %	 	            For the input data structure (positionlist):
 %           			    (x)	         (y)	      (t)
 %       	     	pos = 3.60000      5.00000      0.00000
 %       		          15.1000      22.6000      0.00000
-%       		          4.10000      5.50000      1.00000	
+%       		          4.10000      5.50000      1.00000
 %       		          15.9000      20.7000      2.00000
 %       		          6.20000      4.30000      2.00000
 %
@@ -77,7 +77,7 @@ function res = track(xyzs, maxdisp, varargin)
 %
 %		NB: for t=1 in the example above, one particle temporarily
 %		vanished.  As a result, the trajectory id=1 has one time
-%		missing, i.e. particle loss can cause time gaps to occur 
+%		missing, i.e. particle loss can cause time gaps to occur
 %		in the corresponding trajectory list. In contrast:
 %
 % MATLAB>> res = track(pos,5)
@@ -89,12 +89,12 @@ function res = track(xyzs, maxdisp, varargin)
 %  		                  4.10000      5.50000      1.00000      1.00000
 % 		                  6.20000      4.30000      2.00000      1.00000
 % 		                  15.9000      20.7000      2.00000      2.00000
-%	
+%
 %		where the reappeared 'particle' will be labelled as new
 %		rather than as a continuation of an old particle since
-%		mem=0.  It is up to the user to decide what setting of 
+%		mem=0.  It is up to the user to decide what setting of
 %		'mem' will yield the highest fidelity tracking.
-%	
+%
 % CALLING SEQUENCE:
 %   res = track(pos,5,mem=2)
 %
@@ -106,33 +106,33 @@ function res = track(xyzs, maxdisp, varargin)
 %          *Produces informational messages.  Can be memory intensive for
 % 	        extremely large data sets.
 %   RESTRICTIONS
-%	        maxdisp should be set to a value somewhat less than the mean 
+%	        maxdisp should be set to a value somewhat less than the mean
 %	        spacing between the particles. As maxdisp approaches the mean
-%	        spacing the runtime will increase significantly. The function 
+%	        spacing the runtime will increase significantly. The function
 %	        will produce an error message: "Excessive Combinatorics!" if
-%	        the run time would be too long, and the user should respond 
+%	        the run time would be too long, and the user should respond
 %	        by re-executing the function with a smaller value of maxdisp.
 %	        Obviously, if the particles being tracked are frequently moving
 %	        as much as their mean separation in a single time step, this
 %	        function will not return acceptable trajectories.
 %   PROCEDURE
 %	     Given the positions for n particles at time t(i), and m possible
-%	     new positions at time t(i+1), this function considers all possible 
+%	     new positions at time t(i+1), this function considers all possible
 %	     identifications of the n old positions with the m new positions,
 %	     and chooses that identification which results in the minimal total
 %	     squared displacement. Those identifications which don't associate
 %	     a new position within maxdisp of an old position ( particle loss )
 %	     penalize the total squared displacement by maxdisp^2. For non-
 %	     interacting Brownian particles with the same diffusivity, this
-%	     algorithm will produce the most probable set of identifications 
+%	     algorithm will produce the most probable set of identifications
 %	     (provided maxdisp >> RMS displacement between frames ).
 %	     In practice it works reasonably well for systems with oscillatory,
-%	     ballistic, correlated and random hopping motion, so long as single 
+%	     ballistic, correlated and random hopping motion, so long as single
 %	     time step displacements are reasonably small.  NB: multidimensional
 %	     functionality is intended to facilitate tracking when additional
-%	     information regarding target identity is available (e.g. size or 
+%	     information regarding target identity is available (e.g. size or
 %	     color).  At present, this information should be rescaled by the
-%	     user to have a comparable or smaller (measurement) variance than 
+%	     user to have a comparable or smaller (measurement) variance than
 %	     the spatial displacements.
 %
 % REVISION HISTORY:
@@ -145,44 +145,43 @@ function res = track(xyzs, maxdisp, varargin)
 %		d-dimensional raster metric code.)
 %	 8/94 JCC added functionality to unscramble non-position data
 %		along with position data.
-%	 9/94 JCC rewrote subnetwork code and wrote new, more efficient 
+%	 9/94 JCC rewrote subnetwork code and wrote new, more efficient
 %		permutation code.
 %	 5/95 JCC debugged subnetwork and excessive combinatorics code.
 %	12/95 JCC added memory keyword, and enabled the tracking of
 %		newly appeared particles.
 %	 3/96 JCC made inipos a keyword, and disabled the adding of 'new'
 %		particles when inipos was set.
-%	 3/97 JCC added 'add' keyword, since Chicago users didn't like 
-%		having particle addition be the default. 
+%	 3/97 JCC added 'add' keyword, since Chicago users didn't like
+%		having particle addition be the default.
 %	 9/97 JCC added 'goodenough' keyword to improve memory efficiency
 %		when using the 'add' keyword and to filter out bad tracks.
-%       10/97 JCC streamlined data structure to speed runtime for >200 
+%       10/97 JCC streamlined data structure to speed runtime for >200
 %               timesteps.  Changed 'quiet' keyword to 'verbose'. Made
 %               time labelling more flexible (uniform and sorted is ok).
 %	 9/98 JCC switched trajectory data structure to a 'list' form,
 %		resolving memory issue for large, noisy datasets.
 %  09/17/1998 Eric Weeks, Emory University, luberize code.
-%	 2/99 JCC added Eric Weeks's 'uberize' code to post-facto 
+%	 2/99 JCC added Eric Weeks's 'uberize' code to post-facto
 %		rationalize the particle id numbers, removed 'add' keyword.
 %  03/30/2010 David G. Grier, New York University: Modernized array
 %    notation.  Small code modernizations.  Formatting.
 %    Moved luberize code into main procedure.  Replaced UNQ with
-%    IDL system routine, 
+%    IDL system routine,
 %  06/12/2023 - K Aptowicz (WCU)
 %       * Translated to MATLAB
 %  07/21/2023 - K Aptowicz (WCU)
 %       * Fixed issues caused by SUBREF.M when an array is indexed with an
 %       array. Comments in code (search SUBREF)
+%  05/06/2024 - K Aptowicz (WCU)
+%       * Fixed multiple bugs that arose with dense packings. Output now
+%       appears to match perfectly with IDL version.
 %
-%	This code 'track.pro' is copyright 1999, by John C. Crocker. 
-%	It should be considered 'freeware'- and may be distributed freely 
-%	(outside of the military-industrial complex) in its original form 
+%	This code 'track.pro' is copyright 1999, by John C. Crocker.
+%	It should be considered 'freeware'- and may be distributed freely
+%	(outside of the military-industrial complex) in its original form
 %	when properly attributed.
 %
-% UPDATES:
-%    The most recent version of the IDL program may be obtained from
-%    http://physics.nyu.edu/grierlab/software.html
-% 
 % LICENSE:
 %    This program is free software% you can redistribute it and/or
 %    modify it under the terms of the GNU General Public License as
@@ -200,7 +199,7 @@ function res = track(xyzs, maxdisp, varargin)
 %    02111-1307 USA
 %
 %    If the Internet and WWW are still functional when you are using
-%    this, you should be able to access the GPL here: 
+%    this, you should be able to access the GPL here:
 %    http://www.gnu.org/copyleft/gpl.html
 
 %% Reading and setting parameters
@@ -297,7 +296,7 @@ olist = [0.,0.];
 
 if  ~isempty(goodenough)
     dumphash = zeros(n,1);
-    nvalid = ones(n,1);
+    nvalid = zeros(n,1);    % KBA changed from ones to zeros
 end
 
 % we may not need to track the first time step!
@@ -315,6 +314,7 @@ notnsqrd = (sqrt(n*ngood) >= 200) && (dim < 7);
 
 if notnsqrd
     %   construct the vertices of a 3x3x3... d-dimensional hypercube
+    % for dim=2 ... 3x3 grid; for dim = 3 ... 3x3x3 grid; etc
     cube = zeros(3^dim,dim);
     for d=0:dim-1
         numb = 0;
@@ -326,6 +326,7 @@ if notnsqrd
 
     %   calculate a blocksize which may be greater than maxdisp, but which
     %   keeps nblocks reasonably small.
+    %   KBA: Not sure what this does.
 
     volume = 1;
     for d = 0:dim-1
@@ -335,6 +336,10 @@ if notnsqrd
     end
     blocksize = max( [maxdisp,((volume)/(20*ngood))^(1.0/dim)] );
 end
+
+% Setup some variables for displaying updates
+rep = 1;
+remove = 0;
 
 %   Start the main loop over the frames.
 for i = istart:z
@@ -348,28 +353,41 @@ for i = istart:z
         xyi = xyzs(eyes,1:dim);
         found = zeros(m,1);
         %%   THE TRIVIAL BOND CODE BEGINS
+        %   Trivial bond code has two approaches:
+        %       notnsqrd == 1
+        %       Looks at each frame (i and i-1) and determines if there are
+        %       any particles that are only 'bonded' to each other. These
+        %       are trivial cases and identified.
+        %
+        %       notnsqrd == 0
+        %       Not sure how this one works, although it is called 'fancy'
+
         if notnsqrd
             %   Use the raster metric code to do trivial bonds
 
             %   construct "s", a one dimensional parameterization of the space
             %   ( which consists of the d-dimensional raster scan of the volume.)
-            abi = fix(xyi./blocksize);
-            abpos = fix(pos./blocksize);
+            abi = floor(xyi./blocksize);      % Frame i positions (round towards zero)
+            abpos = floor(pos./blocksize);    % Frame i-1 positions
             si = zeros(m,1);
             spos = zeros(n,1);
             dimm = zeros(dim,1);
             coff = 1.;
 
             for j=1:dim
-                minn = min([abi(:,j);abpos(:,j)]);
-                maxx = max([abi(:,j);abpos(:,j)]);
-                abi(:,j) = abi(:,j) - minn;
-                abpos(:,j) = abpos(:,j) - minn;
-                dimm(j) = maxx-minn + 1;
-                si = si + abi(:,j).*coff;
-                spos = spos + abpos(:,j).*coff;
-                coff = dimm(j).*coff;
+                minn = min([abi(:,j);abpos(:,j)]);  % minimum reduced value of dimension dim of frames i and i-1.
+                maxx = max([abi(:,j);abpos(:,j)]);  % maximum reduced value of dimension dim of frames i and i-1.
+                abi(:,j) = abi(:,j) - minn;         % subtract minimum value from frame i
+                abpos(:,j) = abpos(:,j) - minn;     % subtract minimum value from frame i-1
+                dimm(j) = maxx-minn + 1;            % Find max size of dimension dim.
+                si = si + abi(:,j).*coff;           % For each particle, sum reduced coordinates for frame i
+                spos = spos + abpos(:,j).*coff;     % For each particle, sum reduced coordinates for frame i-1
+                coff = dimm(j).*coff;               % Product of reduced dimensions ( max volume)
             end
+
+            si = si+1;      % Start indexing at 1 for Matlab
+            spos = spos+1;  % Start indexing at 1 for Matlab
+
             nblocks = coff;
             % trim down (intersect) the hypercube if its too big to fit in the
             % particle volume. (i.e. if dimm(j) lt 3)
@@ -400,21 +418,28 @@ for i = istart:z
             end
             scube = mod((scube + nblocks),nblocks);
 
-            % get the sorting for the particles by their "s" positions.
-            [~,isort] = sort(si);
+            % si:
+            %   - a vector equal to the number of the particles in frame i
+            %   - each element of the vector is the location of that
+            %     particle in AB space (a number between 1 to nblocks)
+            % isort:
+            %   - a vector equal to the number of the particles in frame i
+            %   - each element convert the sorted si (i.e. strt and fnsh)
+            %     back to the unsorted si
+            % strt:
+            %   - a vector equal to the size of AB space (nblocks)
+            %   - index equal to -1 if no particle is in the superpixel
+            %   - index equal # of the FIRST particle (sorted list) in that superpixel
+            % fnsh:
+            %   - a vector equal to the size of AB space (nblocks)
+            %   - index equal to 0 if no particle from frame i is in the superpixel
+            %   - index equal # of the LAST particle (sorted list) from frame i in that superpixel
 
-            %   make a hash table which will allow us to know which new particles
-            %   are at a given si.
+            % table
+            % si(isort) makes sure they are in increasing order
+            [~,isort] = sort(si);
             strt = zeros(nblocks,1) -1;
             fnsh = zeros(nblocks,1);
-
-            % IGNORE Blair code ... might regret it
-            % h = find(si == 0);
-            % lh = length(h);
-            % if lh > 0
-            %    si(h) = 1;
-            % end
-
             for j=1:m
                 if strt(si(isort(j))) == -1
                     strt(si(isort(j))) = j;
@@ -424,25 +449,50 @@ for i = istart:z
                 end
             end
 
-            % IGNORE Blair code ... might regret it
-            % if lh > 0
-            %     si(h) = 0;
-            % end
+            % loop over the old particles, and find those new particles in the 'cube'.
+            %
+            % coltot:
+            %    - a vector equal to the number of particles in frame i
+            %    - each element is the number of particles in frame i-1 that
+            %    overlap with particles in frame i
+            % rowtot:
+            %    - a vector equal to the number of particles in frame i-1
+            %    - each element is the number of particles in frame i that
+            %    overlap with particles in frame i-1
+            % which1:
+            %    - a vector equal to the number of particles in frame i-1
+            %    - each element is the number of the FIRST particles in frame i that
+            %    overlap with particles in frame i-1
 
-            %   loop over the old particles, and find those new particles in the 'cube'.
             coltot = zeros(m,1);
             rowtot = zeros(n,1);
             which1 = zeros(n,1);
 
+            % n is the number of particle in previous frame (old particles)
             for j = 1:n
                 map = fix(-1);
                 scub_spos = scube + spos(j);
-                s = mod(scub_spos,nblocks);
+
+                % s is cells near or at particle j in frame i-1
+                % find particle in frame i that is near particle j in frame
+                % i-1 ... these are given by strt(s(w))
+
+                % MATLAB: need to remove 0 indexing and replace with max
+                % value
+                s = mod(scub_spos,nblocks); s(s==0) = nblocks;
+
                 w = find(strt(s) ~= -1); ngood=length(w);
                 if (ngood ~= 0)
                     s = s(w);
+
+                    % map is row number of new particles (frame i) near
+                    % particle j (frame i-1)
+
+                    % s is the location in the ab that has a particle near
+                    % particle j
+
                     for k=1:ngood
-                        map = [map;isort( strt(s(k)):fnsh(s(k)))];
+                        map = [map;isort(strt(s(k)):fnsh(s(k)))];
                     end
                     map = map(2:end);
 
@@ -461,9 +511,15 @@ for i = istart:z
                     end
                 end
             end
+            % Record the particles that are a one-to-one match.
 
-            ntrk = fix(n - sum(rowtot == 0));
-            w = find( rowtot == 1); ngood = length(w);
+            % resx:
+            %   - Size = [Time of "working" copy (i.e. zspan), N particle in frame i-1]
+            %   - Identifies the particle number that matchs frame to
+            %   frame.
+
+            ntrk = fix(n - sum(rowtot == 0));       % Particles in frame i-1 that overlaps with a particle in frame i
+            w = find(rowtot == 1); ngood = length(w);
             if ngood ~= 0
                 ww = find(coltot( which1(w) ) == 1); ngood = length(ww);
                 if ngood ~= 0
@@ -477,12 +533,18 @@ for i = istart:z
             labely = find( rowtot > 0); ngood = length(labely);
             if ngood ~= 0
                 labelx = find( coltot > 0);
-
                 nontrivial = 1;
             else
                 nontrivial = 0;
             end
+            if verbose
+                disp(['Frame ' int2str(i),': ',int2str(sum(found)),...
+                    ' trival bonds out of ', int2str(m), ' particles.']);
+            end
         else
+            if verbose
+                disp('Use simple N^2 time routine to calculate trivial bonds')
+            end
             %   or: Use simple N^2 time routine to calculate trivial bonds
 
             % let's try a nice, loopless way!
@@ -554,7 +616,6 @@ for i = istart:z
                     coltot(which1(w(ww))) = 0;
                 end
             end
-
             labely = find( rowtot > 0);
             ngood = length(labely);
 
@@ -564,15 +625,25 @@ for i = istart:z
             else
                 nontrivial = 0;
             end
-
         end
+
         %%
         %   THE TRIVIAL BOND CODE ENDS
-        if nontrivial
 
+        % labelx:
+        %   - Particles in frame i that still need to be matched
+        % labely:
+        %   - Particles in frame i-1 that still need to be matched
+
+        if nontrivial
+            if verbose
+                disp('Performing nontrivial bond calculation')
+                disp(['MATCHING: ',int2str(length(labelx)),' particles (frame ',int2str(i), ...
+                    ') TO ', ...
+                    int2str(length(labely)),' particles (frame ',int2str(i-1),')']);
+            end
             xdim = length(labelx);
             ydim = length(labely);
-
             %  make a list of the non-trivial bonds
             bonds = zeros(1,2);
             bondlen = 0;
@@ -581,16 +652,25 @@ for i = istart:z
                 for d=1:dim
                     distq = distq + (xyi(labelx,d) - pos(labely(j),d)).^2;
                 end
-                w= find(distq <  maxdisq)' - 1;
+                w= find(distq <  maxdisq)'; % KBA removed a -1, not sure why it was there
                 ngood = length(w);
                 newb = [w;(zeros(1,ngood)+j)];
                 bonds = [bonds;newb'];
-                bondlen = [ bondlen;distq( w + 1) ];
+                bondlen = [ bondlen;distq(w) ];
             end
             bonds = bonds(2:end,:);
             bondlen = bondlen(2:end);
             numbonds = length(bonds(:,1));
             mbonds = bonds;
+
+            % bonds:
+            %   - Particles in frames i and i-1 that have a bond (are less than max disp)
+            %   - Column 1 is particles in frame i (reduced numbering)
+            %   - Column 2 is particles in frame i-1 (reduced numbering)
+            % bondlen
+            %   - the length of each bond
+            % xdim & ydim
+            %   - number of unmatched particles in frames i and i-1
 
             if max([xdim,ydim]) < 4
                 nclust = 1;
@@ -599,29 +679,46 @@ for i = istart:z
                 mysz = ydim;
                 bmap = zeros(length(bonds(:,1)),1) - 1;
             else
-                %   THE SUBNETWORK CODE BEGINS
 
+                %   THE SUBNETWORK CODE BEGINS
                 lista = zeros(numbonds,1);
                 listb = zeros(numbonds,1);
                 nclust = 0;
                 maxsz = 0;
                 thru = xdim;
-
                 while thru ~= 0
+                    % thru:
+                    %  - number of bonds still to be accounted for in frame i
+                    %
                     %   the following code extracts connected sub-networks of the non-trivial
                     %   bonds.  NB: lista/b can have redundant entries due to
                     %   multiple-connected subnetworks.
-                    w = find(bonds(:,2) >= 0);
+
+                    % Identify first bond pair (using bonds) not matched.
+                    % Record the particle number
+                    % lista:
+                    %   - particle in frame i part of the cluster
+                    % listb:
+                    %   - particle in frame i-1 part of the cluster
+
+                    w = find(bonds(:,2) >= 1);
                     lista(1) = bonds(w(1),2);
                     listb(1) = bonds(w(1),1);
-                    bonds(w(1),:) = -(nclust+1);
+                    bonds(w(1),:) = -(nclust+1);    % Identify bond as being part of a cluster
                     adda = 1; addb = 1;
-                    donea = 0; doneb = 0;
+                    donea = 1; doneb = 1;
                     repeat1=true;
-                    while repeat1
 
-                        if (donea ~= adda)
-                            w = find(bonds(:,1) == lista(donea+1));
+                    % Identify clusters
+                    % Identify each bonds (particle pair) in a cluster and
+                    % label them with the cluster numbers.
+                    % When a new particle is identified as being in the
+                    % cluster, search for particles it is bonded to and add
+                    % them to the cluster.
+
+                    while repeat1
+                        if (donea ~= adda+1)
+                            w = find(bonds(:,2) == lista(donea));
                             ngood = length(w);
                             if ngood ~= 0
                                 listb(addb+1:addb+ngood,1) = bonds(w,1);
@@ -630,8 +727,9 @@ for i = istart:z
                             end
                             donea = donea+1;
                         end
-                        if (doneb ~= addb)
-                            w = find(bonds(:,1) == listb(doneb+1));
+
+                        if (doneb ~= addb+1)
+                            w = find(bonds(:,1) == listb(doneb));
                             ngood = length(w);
                             if ngood ~= 0
                                 lista(adda+1:adda+ngood,1) = bonds(w,2);
@@ -640,39 +738,48 @@ for i = istart:z
                             end
                             doneb = doneb+1;
                         end
-                        repeat1 = ~((donea == adda) && (doneb == addb));
+                        repeat1 = ~((donea == adda+1) && (doneb == addb+1));
                     end
-                    % a thing of beauty is a joy forever.
 
-                    xsz = numel(unique(listb(1:doneb),'sorted'));
-                    ysz = numel(unique(lista(1:donea),'sorted'));
+                    % Determine size of cluster
+                    xsz = numel(unique(listb(1:doneb-1),'sorted'));
+                    ysz = numel(unique(lista(1:donea-1),'sorted'));
 
+                    % Record largest size
                     if xsz*ysz > maxsz
                         maxsz = xsz*ysz;
                         mxsz = xsz;
                         mysz = ysz;
                     end
 
-                    thru = thru -xsz;
+                    thru = thru -xsz;   % Keep going until all particles in frame i are part of a cluster.
                     nclust = nclust + 1;
                 end
                 bmap = bonds(:,1);
             end
-            %   THE SUBNETWORK CODE ENDS
+            % THE SUBNETWORK CODE ENDS
+            %
+            % mbonds
+            %   - Old version of bonds listing the particles in each bond
+            %   - Particles in frames i and i-1 that have a bond (are less than max disp)
+            %   - Column 1 is particles in frame i (reduced numbering)
+            %   - Column 2 is particles in frame i-1 (reduced numbering)
+            % bonds
+            %   - NOW, lists the cluster each bond is associated with (as a negative number).
+            % bmap
+            %   - List of cluster number for each bond
+
             if verbose
-                disp([int2str(i),': ','Permuting', ...
-                    int2str(nclust),' network', ...
-                    '(nclust > 1)' , 's', ' ']);
-                disp(['      Max. network:',int2str(mxsz),' x'+...
-                    int2str(mysz)]);
+                disp(['Frame ',int2str(i),': ','Permuting ', int2str(nclust),' networks']);
+                disp(['  Max. network: ',int2str(mxsz),' x ',int2str(mysz)]);
             end
 
             %   THE PERMUTATION CODE BEGINS
+
             for nc =1:nclust
                 w = find( bmap == -1*(nc)); nbonds = length(w);
                 bonds = mbonds(w,:);
                 lensq = bondlen(w);
-
                 uold = unique(bonds(:,1),'sorted');
                 nold = numel(uold);
                 unew = unique(bonds(:,2),'sorted'); % KBA - IDL didn't sort?
@@ -706,6 +813,7 @@ for i = istart:z
                 end
                 st(1) = 1 ;
                 fi(nnew) = nbonds; % check this later
+
                 if nnew > 1
                     sb = bonds(:,2);
                     sbr = circshift(sb,1);
@@ -822,8 +930,8 @@ for i = istart:z
                 end
 
                 %   update resx using the minimum bond configuration
-                resx(ispan,labely(bonds(minbonds,2))) = eyes(labelx(bonds(minbonds,1)+1));
-                found(labelx(bonds(minbonds,1)+1)) = 1;
+                resx(ispan,labely(bonds(minbonds,2))) = eyes(labelx(bonds(minbonds,1)));
+                found(labelx(bonds(minbonds,1))) = 1;
             end
             %   THE PERMUTATION CODE ENDS
         else
@@ -843,13 +951,12 @@ for i = istart:z
         else
             disp(' Warning, tracking zero particles!')
         end
+
         %     we need to add new guys, as appropriate.
         newguys = find(found == 0); nnew = length(newguys);
-
         if (nnew  > 0) && isempty(inipos)
             newarr = zeros(zspan,nnew) -1;
             resx = [resx,newarr];
-
             resx(ispan,n+1:end) = eyes(newguys);
             pos = [[pos];[xyzs(eyes(newguys),1:dim)]];
             nmem = zeros(nnew,1);
@@ -890,6 +997,7 @@ for i = istart:z
 
     %  we need to insert the working copy of resx into the big copy bigresx
     %  do our house keeping every zspan time steps (dumping bad lost guys)
+
     if (ispan == zspan) || (i == z)
 
         %  if a permanently lost guy has fewer than goodenough valid positions
@@ -903,6 +1011,7 @@ for i = istart:z
             newarr = zeros(z,nnew) -1;
             bigresx = [bigresx,newarr];
         end
+
         if  ~isempty(goodenough)
             if (sum(dumphash(:)) > 0)
                 if verbose, disp('Dumping bad trajectories...'); end
@@ -918,9 +1027,18 @@ for i = istart:z
                 dumphash = zeros(nkeep,1);
             end
         end
+
         if ~verbose && isempty(quiet)
-            disp(['Frame ', int2str(i),' of ', int2str(z), ' done. ', ...
-                'Current frame has ',int2str(ntrk),' particles. ']);
+            if remove == 1
+                reverseStr = repmat(sprintf('\b'), 1, N_rm);
+            else
+                reverseStr = [];
+                remove = 1;
+            end
+            disp_string = ['Frame ', int2str(i),' of ', int2str(z), ' done. ', ...
+                'Current frame has ',int2str(ntrk),' particles. '];
+            disp([reverseStr,disp_string]);
+            N_rm = length(disp_string)+1;
         end
         bigresx(i-(ispan)+1:i,:) = resx(1:ispan,:);
         resx = zeros(zspan,n) - 1;
@@ -929,6 +1047,7 @@ for i = istart:z
         %  onto the 'output list', along with their 'unique id' number to
         %  make scanning the data files a little easier.  Do infrequently.
         wpull = find(pos(:,1) == -maxdisp); npull = length(wpull);
+
         if npull > 0
             lillist = zeros(1,2);
             for ipull=1:npull
@@ -940,6 +1059,7 @@ for i = istart:z
             end
             olist = [[olist];[lillist(2:end,:)]];
         end
+
         %     now get rid of the guys we don't need any more....
         %     but watch out for when we have no valid particles to track!
         wkeep = find(pos(:,1) >= 0); nkeep = length(wkeep);
@@ -949,6 +1069,7 @@ for i = istart:z
 
         resx = resx(:,wkeep);
         bigresx = bigresx(:,wkeep);
+
         pos = pos(wkeep,:);
         mem = mem(wkeep);
         uniqid = uniqid(wkeep);
@@ -957,17 +1078,41 @@ for i = istart:z
         if  ~isempty(goodenough)
             nvalid = nvalid(wkeep);
         end
+
     end  % the big loop over z time steps....
 end
 
+% Main output from "big loop over z time steps"
+%
+% olist
+%   - stands for output list
+%   - list of all particles that should be part of the output result
+%   - second column is the particle ID; is using goodenough, IDs will jump
+%   around since some tracks are removed.
+%   - first column is the is the row number in xyzz (i.e. pt) for the particle.
+%
+% For final sweep, also need ...
+% bigresx
+%   - Each row is a frame in the video
+%   - Each column is a particle that has been linked over multiple frames.
+%   The number is the row number of that particle in xyzs.
+%   - '-1' means is wasn't found in that frame.
+%
+% uniqid
+%   - Unique ID numbers of trajectories in bigresx
+%   - Arbitrarily set
+%
+% pos
+%   - xy positions of the final frame analyzed
+%   - used for truncated bigresx
 
-
-%  make a final scan for short trajectories that weren't lost at the end.
+%  make final scan of bigresx for trajectories that are long enough
+%  only save those trajectories
 if  ~isempty(goodenough)
     nvalid = sum(bigresx >= 0 ,1);
     wkeep = find(nvalid >= goodenough); nkeep = length(wkeep);
 
-    if nkeep < n
+    if nkeep < n    % KBA: Not sure why this is needed.
         bigresx = bigresx(:,wkeep);
         n = nkeep;
         uniqid = uniqid(wkeep);
@@ -977,10 +1122,11 @@ end
 
 %  make the final scan to 'pull' everybody else into the olist.
 wpull = find( pos(:,1) ~= -2*maxdisp); npull = length(wpull);
+
 if npull > 0
     lillist = zeros(1,2);
     for ipull=1:npull
-        wpull2 = find(bigresx(:,wpull(ipull)) ~= -1);
+        wpull2 = find(bigresx(:,wpull(ipull)) ~= -1);   % Find elements in column that aren't -1
         npull2 = length(wpull2);
         thing = [bigresx(wpull2,wpull(ipull)),zeros(npull2,1)+uniqid(wpull(ipull))];
         lillist = [lillist;thing];
@@ -1023,5 +1169,5 @@ if isempty(quiet)
     disp(['Median track length: ', int2str(median(trkLength))]);
 end
 
-end
+%end
 % ***************** end of track.pro

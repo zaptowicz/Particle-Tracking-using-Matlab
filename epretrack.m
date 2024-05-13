@@ -102,6 +102,10 @@ function res = epretrack(stk, varargin)
 %  03/15/2024 - K Aptowicz (WCU)
 %       * Made changes to how 'sep' is called in findfeatures and updated
 %       epretrack to match
+%  04/12/2024 - K Aptowicz (WCU)
+%       * Changed syntax in code for optional parameters in findfeatures
+%       from parameter=X to 'parameter', X
+%       User reported issues with previous syntax and Matlab 2020b.  
 
 %% Reading and setting parameters
 % Set default values for optional parameters
@@ -145,12 +149,11 @@ VIF_Info = p.Results.VIF_Info;
 %% *****************************
 
 %% Populate parameters not defined by user
-% populare VIF_Info if needed
+% populate VIF_Info if needed
 if ~isempty(VIF_Info)
     if ~(isfield(VIF_Info,'pix_w') && isfield(VIF_Info,'pix_h'))
         disp('Need size of VIF video frame (pix_w and pix_h) in structure VIF_Info')
     end
-    VIF_input.frame_N = 10;
     if ~(isfield(VIF_Info,'frame_N'))
         disp('VIF_Info.frame_N not set, so setting to 10')
         VIF_Info.frame_N=10;
@@ -244,7 +247,7 @@ if usingfiles == 1
 
             % *** Common Code Repeated Below ***
             im = bpass(im,bplo,bphi);
-            f = findfeatures(im,extent,sep=sepTemp,mass=massTemp,min=minTemp,quiet=quietTemp,quiet='y');
+            f = findfeatures(im,extent,'sep',sepTemp,'mass',massTemp,'min',minTemp,'quiet','y');
             nf = numel(f(:,1));
             if (f(1) ~= -1)
                 res=[[res];[f,ones(nf,1)*[i]]];
@@ -281,7 +284,7 @@ if usingfiles == 1
             % *** Common Code ***
             im = bpass(im,bplo,bphi);
             massTemp=mass;minTemp=min;quietTemp=quiet;
-            f = findfeatures(im,extent,sep=sepTemp,mass=massTemp,min=minTemp,quiet=quietTemp,quiet='y');
+            f = findfeatures(im,extent,'sep',sepTemp,'mass',massTemp,'min',minTemp,'quiet','y');
             nf = numel(f(:,1));
             if (f(1) ~= -1)
                 res=[[res];[f,ones(nf,1)*[i]]];
@@ -310,7 +313,7 @@ if usingfiles == 1
 
             % *** Common Code ***
             im = bpass(im,bplo,bphi);
-            f = findfeatures(im,extent,sep=sepTemp,mass=massTemp,min=minTemp,quiet=quietTemp,quiet='y');
+            f = findfeatures(im,extent,'sep',sepTemp,'mass',massTemp,'min',minTemp,'quiet','y');
             nf = numel(f(:,1));
             if (f(1) ~= -1)
                 res=[[res];[f,ones(nf,1)*[i]]];
@@ -338,7 +341,7 @@ else
 
         % *** Common Code ***
         im = bpass(stk(:,:,i),bplo,bphi);
-        f = findfeatures(im,extent,sep=sepTemp,mass=massTemp,min=minTemp,quiet=quietTemp,quiet='y');
+        f = findfeatures(im,extent,'sep',sepTemp,'mass',massTemp,'min',minTemp,'quiet','y');
         nf = numel(f(:,1));
         if (f(1) ~= -1)
             res=[[res];[f,ones(nf,1)*[i]]];
