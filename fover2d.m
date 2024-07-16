@@ -44,6 +44,9 @@ function output=fover2d(image,points,varargin)
 %       positions from a track array.
 %   06/08/2023 - K Aptowicz (WCU)
 %       * Translated to MATLAB
+%   06/18/2024 - K Aptowicz (WCU)
+%       * Shifted x y locations by 1 to account for IDL to Matlab
+%       coordinates
 %
 
 %% Reading and setting parameters
@@ -106,6 +109,11 @@ else
     y = round(pnts(:,1))*2;
     radius=2*radius;
 end
+
+% IDL to Matlab fix 
+% IDL starts at zero, but Matlab starts at 1
+x=x+1;
+y=y+1; 
 
 x2=numel(output(:,1,1));    %		3rd array index just for safety
 y2=numel(output(1,:,1));
