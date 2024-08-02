@@ -112,6 +112,8 @@ function res = epretrack(stk, varargin)
 %       * Added AOI keyword to allow user to set area of interest
 %  06/24/2024 - K Aptowicz (WCU) 
 %       * Added invert keyword to invert the image before analyzing. 
+%  08/02/2024 - K Aptowicz (WCU) 
+%       * Added ability to use frame_start in VIF_Info. Not sure why it was left out.  
 
 %% Reading and setting parameters
 % Set default values for optional parameters
@@ -167,6 +169,7 @@ if ~isempty(VIF_Info)
         disp('VIF_Info.frame_N not set, so setting to 10')
         VIF_Info.frame_N=10;
     end
+    if ~(isfield(VIF_Info,'frame_start')), VIF_Info.frame_start=1; end
     if ~(isfield(VIF_Info,'byte_offset')), VIF_Info.byte_offset=[]; end
     if ~(isfield(VIF_Info,'byte_spacing')), VIF_Info.byte_spacing=[]; end
     if ~(isfield(VIF_Info,'frame_skip')), VIF_Info.frame_skip=0; end
@@ -272,7 +275,7 @@ if usingfiles == 1
         ns = VIF_Info.frame_N; % number of frames
         if ns >= 200, rep = 50; end
         if ~isempty(first), ns = 1; end  %handy for a quick looksee...
-        for i = 1:ns
+        for i = VIF_Info.frame_start:VIF_Info.frame_start+ns
             if ((mod((i),rep) == 0) && isempty(quiet))
                 if remove == 1
                     reverseStr = repmat(sprintf('\b'), 1, N_rm);
@@ -280,7 +283,7 @@ if usingfiles == 1
                     reverseStr = [];
                     remove = 1;
                 end
-                disp_string = ['processing frame ', int2str(i),' out of ',int2str(ns),' ...'];
+                disp_string = ['processing frame ', int2str(i-VIF_Info.frame_start),' out of ',int2str(ns),' ...'];
                 disp([reverseStr,disp_string]);
                 N_rm = length(disp_string)+1;
             end

@@ -21,6 +21,7 @@ function vid = read_vif(filename, pix_w, pix_h, varargin)
 %           bit_8: set to 'y' to output video to 8-bit
 %      disksector: (double) Size of disk sector used in hard drive (512 vs
 %      4096) 
+%             AOI: Area of interest. Format: [yi,yf,xi,xf]
 %
 % OUTPUT:
 %             vid: Output video (pix_h, pix_w, frame_N)
@@ -55,6 +56,8 @@ function vid = read_vif(filename, pix_w, pix_h, varargin)
 %       * Translated to MATLAB
 %   06/08/2023 - K Aptowicz
 %       * Cleaning up code and renaming variables
+%   08/02/2024 - K Aptowicz
+%       * Added error when frame_start is too large. 
 %
 %% Reading and setting parameters
 % Set default values for optional parameters
@@ -155,8 +158,11 @@ else
 end
 
 % Goto first frame to be read in
-fseek(fid, byte_offset+uint64(frame_start-1)*fsize, 'bof');
-
+status = fseek(fid, byte_offset+uint64(frame_start-1)*fsize, 'bof');
+if status == -1
+    disp('ERROR: start frame larger than file size.')
+    return
+end
 if (byte_offset+uint64(frame_start-1)*fsize) == uint64(2^64)
     disp('WARNING: bytes to skip larger than unit64')
 end
