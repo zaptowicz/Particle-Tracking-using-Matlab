@@ -275,7 +275,7 @@ if usingfiles == 1
         ns = VIF_Info.frame_N; % number of frames
         if ns >= 200, rep = 50; end
         if ~isempty(first), ns = 1; end  %handy for a quick looksee...
-        for i = VIF_Info.frame_start:VIF_Info.frame_start+ns
+        for i = VIF_Info.frame_start:VIF_Info.frame_start+ns-1
             if ((mod((i),rep) == 0) && isempty(quiet))
                 if remove == 1
                     reverseStr = repmat(sprintf('\b'), 1, N_rm);
@@ -283,7 +283,7 @@ if usingfiles == 1
                     reverseStr = [];
                     remove = 1;
                 end
-                disp_string = ['processing frame ', int2str(i-VIF_Info.frame_start),' out of ',int2str(ns),' ...'];
+                disp_string = ['processing frame ', int2str(i-VIF_Info.frame_start+1),' out of ',int2str(ns),' ...'];
                 disp([reverseStr,disp_string]);
                 N_rm = length(disp_string)+1;
             end
