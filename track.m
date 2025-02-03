@@ -184,7 +184,7 @@ function res = track(xyzs, maxdisp, varargin)
 %	It should be considered 'freeware'- and may be distributed freely
 %	(outside of the military-industrial complex) in its original form
 %	when properly attributed.
-%
+% 
 % LICENSE:
 %    This program is free software% you can redistribute it and/or
 %    modify it under the terms of the GNU General Public License as
