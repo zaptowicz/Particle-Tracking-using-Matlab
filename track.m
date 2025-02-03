@@ -176,6 +176,9 @@ function res = track(xyzs, maxdisp, varargin)
 %  05/06/2024 - K Aptowicz (WCU)
 %       * Fixed multiple bugs that arose with dense packings. Output now
 %       appears to match perfectly with IDL version.
+%  02/03/2025 - K Aptowicz (WCU)
+%       * Added ability to handle missing frames inserting frames with
+%       dummy particles and then deleting them at the end. 
 %
 %	This code 'track.pro' is copyright 1999, by John C. Crocker.
 %	It should be considered 'freeware'- and may be distributed freely
