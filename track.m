@@ -6,7 +6,7 @@ function res = track(xyzs, maxdisp, varargin)
 % DESCRIPTION:
 %	Constructs n-dimensional trajectories from a scrambled list of
 %	particle coordinates determined at discrete times (e.g. in
-%	consecutive video frames). 
+%	consecutive video frames).   
 %
 % INPUT (REQUIRED)
 %	  positionlist: an array listing the scrambled coordinates and data
