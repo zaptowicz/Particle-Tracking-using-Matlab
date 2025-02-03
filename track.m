@@ -233,9 +233,53 @@ verbose = p.Results.verbose;
 quiet = p.Results.quiet;
 %% *****************************
 
-dd =numel(xyzs(1,:)) - 1;
+% calculate parameters about time
+dd =numel(xyzs(1,:));               % # of column for time
+t = xyzs(:,dd);                     % time column
+st = circshift(t,1);        
+st = t(2:end)-st(2:end);            % change in frame number in adjacent rows
+w = find(st>0); z = length(w);      % z is the number of nonzero time jumps 
+z = z + 1;                          % total number of frames (# of frame jumps + 1)
+
+% check the input time vector is ok, i.e. sorted and uniform
+if  sum(st(:)<0)
+    disp('****************************************')
+    disp('ERROR: Some time vectors are decreasing!')
+    disp('****************************************')
+    return
+end
+
+% Fix for missing frames (KBA)
+% Original track program wasn't written to handle missing frames. An easy
+% fix is to populate the pt file with dummy particles for the missing frames
+% for dummy particle with positions x = y = 0, then to delete these particles 
+% in the tracked file before outputting. 
+
+if (sum(st(w) ~= st(w(1))) ~= 0)
+    disp(' *** Warning - frames are missing. ***')
+    disp(' Adding dummy particles in missing frames: ')
+    disp(['   Assuming frames are an arithmetic sequential with a '])
+    disp(['   common difference of one  (8, 9, 10, 11, ...'])
+    disp(' *************************************')
+
+    % KBA: Fix for videos with missing frames
+    tmiss = setdiff([min(t):1:max(t)], t);  % times for missing frames. 
+    pt_pad = zeros(length(tmiss),dd);     % make dummy pt file
+    pt_pad(:,dd) = tmiss;                 % add time stamps of missing frames
+    pt_pad(:,1:2) = 0;                      % set x and y positions to zero
+    xyzs=sortrows([xyzs;pt_pad],dd);      % add in original pt file and sort by time
+
+    % Update time variables
+    t = xyzs(:,dd);
+    st = circshift(t,1);
+    st = t(2:end)-st(2:end);
+    w = find(st>0); z = length(w);
+    z = z + 1;                      % number of time steps
+    dummy=1;                        % track if dummy particles were inserted
+end
+
 if isempty(dim)
-    dim = dd;
+    dim = min(2,dd-1);
     if isempty(quiet)
         disp(['Setting dim = ',int2str(dim)+' by default']);
     end
@@ -243,34 +287,22 @@ end
 
 if isempty(memory_b); memory_b = 0; end
 
-% check the input time vector is ok, i.e. sorted and uniform
-t = xyzs(:,dd+1);
-st = circshift(t,1);
-st = t(2:end)-st(2:end);
-
-if  sum(st(:)<0)
-    disp('The time vectors is not in order')
+if z == 0
+    disp('****************************************')
+    disp('ERROR: All data have the same time stamp!')
+    disp('****************************************')
     return
 end
 
-w = find(st>0); z = length(w);
-if z == 0
-    disp(' Error- All data have the same time stamp!')
-end
-z = z + 1;                      % number of time steps
-
-if (sum(st(w) ~= st(w(1))) ~= 0)
-    disp(' Warning- Times are not evenly gridded!')
-end
-
 % partition the input data by unique times
+% res is the index of the beginning of unique time in the track
 [~,res,~] = unique(t);
-res(1)=1;
-res = [res', length(t)+1]';
+res = [res', length(t)+1]'; % KBA: IDL has the last index twice, not sure why
+
 
 % get the initial positions
-ngood = res(2) - res(1);
-eyes = 1:ngood;             %
+ngood = res(2) - res(1);  % Number of particles in first frame.
+eyes = 1:ngood;
 
 if  ~isempty(inipos)
     pos = inipos(:,1:dim);
@@ -282,7 +314,8 @@ else
     n = ngood;
 end
 
-%how long are the 'working' copies of the data?
+% How long are the 'working' copies of the data?
+% More particles in a first frame, shorter 'working' copies in time
 zspan = 50;
 if n > 200, zspan = 20; end
 if n > 500, zspan = 10; end
@@ -1105,9 +1138,13 @@ end
 % pos
 %   - xy positions of the final frame analyzed
 %   - used for truncated bigresx
+%
+% n
+%   - the number of particles being tracked in the last frame
 
 %  make final scan of bigresx for trajectories that are long enough
 %  only save those trajectories
+
 if  ~isempty(goodenough)
     nvalid = sum(bigresx >= 0 ,1);
     wkeep = find(nvalid >= goodenough); nkeep = length(wkeep);
@@ -1144,11 +1181,17 @@ if verbose
     disp('Preparing result array...')
 end
 nolist = length(olist(:,1));
-res = zeros(nolist,dd+2);
-for j=1:dd+1
+res = zeros(nolist,dd+1);
+for j=1:dd
     res(:,j) = xyzs(olist(:,1),j);
 end
-res(:,dd+2) = olist(:,2);
+res(:,dd+1) = olist(:,2);
+
+% Remove dummy particles if inserted for missing frames 
+if ~isempty(dummy)
+    w=find(res(:,1)==0);
+    res(w,:) = [];
+end
 
 % Renumber IDs incase there are any gaps
 ndat=numel(res(1,:));
