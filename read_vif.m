@@ -19,6 +19,9 @@ function vid = read_vif(filename, pix_w, pix_h, varargin)
 %   bit_10_packed: set to 'y' if data is 10-bit packed.
 % bit_10_unpacked: set to 'y' if data is 10-bit unpacked.
 %           bit_8: set to 'y' to output video to 8-bit
+%      disksector: (double) Size of disk sector used in hard drive (512 vs
+%      4096) 
+%             AOI: Area of interest. Format: [yi,yf,xi,xf]
 %
 % OUTPUT:
 %             vid: Output video (pix_h, pix_w, frame_N)
@@ -53,6 +56,8 @@ function vid = read_vif(filename, pix_w, pix_h, varargin)
 %       * Translated to MATLAB
 %   06/08/2023 - K Aptowicz
 %       * Cleaning up code and renaming variables
+%   08/02/2024 - K Aptowicz
+%       * Added error when frame_start is too large. 
 %
 %% Reading and setting parameters
 % Set default values for optional parameters
@@ -64,6 +69,8 @@ default_frame_N = [];
 default_packed = [];
 default_unpacked = [];
 default_bit_8 = [];
+default_disksector = 512;
+default_AOI = [];
 
 % Create fields for all optionals inputs
 %Variables
@@ -73,6 +80,9 @@ addParameter(p,'byte_spacing',default_byte_spacing,@isnumeric)
 addParameter(p,'frame_start',default_frame_start,@isnumeric)
 addParameter(p,'frame_skip',default_frame_skip,@isnumeric)
 addParameter(p,'frame_N',default_frame_N,@isnumeric)
+addParameter(p,'disksector',default_disksector,@isnumeric)
+addParameter(p,'AOI',default_AOI,@isnumeric)
+
 % Keywords
 addOptional(p,'bit_10_packed',default_packed)
 addOptional(p,'bit_10_unpacked',default_unpacked)
@@ -88,21 +98,23 @@ frame_N = p.Results.frame_N;
 bit_10_packed = p.Results.bit_10_packed;
 bit_10_unpacked = p.Results.bit_10_unpacked;
 bit_8 = p.Results.bit_8;
+disksector = p.Results.disksector;
+AOI=p.Results.AOI;
 
 % Image size
 m = pix_w;
 n = pix_h;
 
 % Calculating byte_spacing (padding)
-% Frames are saved to disk sectors of 512 bytes
+% Frames are saved to disk sectors of 512 (old) bytes
 if isempty(byte_spacing)
 %    disp('Setting byte_spacing to pad frames to interger*512 bytes.')
     if ~isempty(bit_10_packed)
-        byte_spacing = 512*ceil((m*n*5/4+72)/512)-m*n*5/4;
+        byte_spacing = disksector*ceil((m*n*5/4+72)/disksector)-m*n*5/4;
     elseif ~isempty(bit_10_unpacked)
-        byte_spacing = 512*ceil((m*n*2+72)/512)-m*n*2;
+        byte_spacing = disksector*ceil((m*n*2+72)/disksector)-m*n*2;
     else
-        byte_spacing = 512*ceil((m*n+72)/512)-m*n;
+        byte_spacing = disksector*ceil((m*n+72)/disksector)-m*n;
     end
 %    disp(['...... byte_spacing = ',int2str(byte_spacing),' bytes'])
 end
@@ -146,8 +158,11 @@ else
 end
 
 % Goto first frame to be read in
-fseek(fid, byte_offset+uint64(frame_start-1)*fsize, 'bof');
-
+status = fseek(fid, byte_offset+uint64(frame_start-1)*fsize, 'bof');
+if status == -1
+    disp('ERROR: start frame larger than file size.')
+    return
+end
 if (byte_offset+uint64(frame_start-1)*fsize) == uint64(2^64)
     disp('WARNING: bytes to skip larger than unit64')
 end
@@ -175,6 +190,10 @@ end
 
 if ~isempty(bit_8) && (data_type ~= "uint8")
     vid=uint8(vid/4);
+end
+
+if ~isempty(AOI)
+    vid=vid(AOI(1):AOI(2),AOI(3):AOI(4),:);
 end
 
 fclose(fid);

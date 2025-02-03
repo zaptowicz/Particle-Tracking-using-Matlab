@@ -41,6 +41,7 @@ function res = epretrack(stk, varargin)
 %			        noisy images.
 %		     quiet:	['y'] Surpress printing of informational messages.
 %            first: ['y'] Just look at first image (first frame).
+%           invert: ['y'] Invert images. Assumes 255 max intensity. 
 %         VIF_Info: structure containing information needed to read in VIF files.
 %                   Example:
 %                       VIF_input.pix_w = 658;
@@ -106,6 +107,13 @@ function res = epretrack(stk, varargin)
 %       * Changed syntax in code for optional parameters in findfeatures
 %       from parameter=X to 'parameter', X
 %       User reported issues with previous syntax and Matlab 2020b.  
+%  06/17/2024 - K Aptowicz (WCU) 
+%       * Added disksector keyword (old HDD = 512 | new HDD = 4096) 
+%       * Added AOI keyword to allow user to set area of interest
+%  06/24/2024 - K Aptowicz (WCU) 
+%       * Added invert keyword to invert the image before analyzing. 
+%  08/02/2024 - K Aptowicz (WCU) 
+%       * Added ability to use frame_start in VIF_Info. Not sure why it was left out.  
 
 %% Reading and setting parameters
 % Set default values for optional parameters
@@ -116,6 +124,7 @@ default_sep = [];
 default_mass = [];
 default_min = [];
 default_first = [];
+default_invert = [];
 default_quiet = [];
 default_VIF_Info = [];
 
@@ -133,6 +142,7 @@ addParameter(p,'VIF_Info',default_VIF_Info)
 % Keywords
 addOptional(p,'first', default_first)
 addOptional(p,'quiet', default_quiet)
+addOptional(p,'invert', default_invert)
 
 % populate optional parameters from inputs
 parse(p,varargin{:});
@@ -144,6 +154,7 @@ mass = p.Results.mass;
 min = p.Results.min;
 quiet = p.Results.quiet;
 first = p.Results.first;
+invert = p.Results.invert; 
 VIF_Info = p.Results.VIF_Info;
 
 %% *****************************
@@ -158,6 +169,7 @@ if ~isempty(VIF_Info)
         disp('VIF_Info.frame_N not set, so setting to 10')
         VIF_Info.frame_N=10;
     end
+    if ~(isfield(VIF_Info,'frame_start')), VIF_Info.frame_start=1; end
     if ~(isfield(VIF_Info,'byte_offset')), VIF_Info.byte_offset=[]; end
     if ~(isfield(VIF_Info,'byte_spacing')), VIF_Info.byte_spacing=[]; end
     if ~(isfield(VIF_Info,'frame_skip')), VIF_Info.frame_skip=0; end
@@ -165,6 +177,8 @@ if ~isempty(VIF_Info)
     if ~(isfield(VIF_Info,'bit_10_unpacked')), VIF_Info.bit_10_unpacked=[]; end
     if ~(isfield(VIF_Info,'bit_8')), VIF_Info.bit_8=[]; end
     if ~(isfield(VIF_Info,'byte_offset')), VIF_Info.byte_offset=[]; end
+    if ~(isfield(VIF_Info,'disksector')), VIF_Info.disksector=512; end
+    if ~(isfield(VIF_Info,'AOI')), VIF_Info.AOI=[]; end
 end
 
 msg='Defaults:';
@@ -246,6 +260,7 @@ if usingfiles == 1
             im = rgb2gray(read(v,i));
 
             % *** Common Code Repeated Below ***
+            if invert=='y', im=255-im; end % Invert image
             im = bpass(im,bplo,bphi);
             f = findfeatures(im,extent,'sep',sepTemp,'mass',massTemp,'min',minTemp,'quiet','y');
             nf = numel(f(:,1));
@@ -260,7 +275,7 @@ if usingfiles == 1
         ns = VIF_Info.frame_N; % number of frames
         if ns >= 200, rep = 50; end
         if ~isempty(first), ns = 1; end  %handy for a quick looksee...
-        for i = 1:ns
+        for i = VIF_Info.frame_start:VIF_Info.frame_start+ns
             if ((mod((i),rep) == 0) && isempty(quiet))
                 if remove == 1
                     reverseStr = repmat(sprintf('\b'), 1, N_rm);
@@ -268,7 +283,7 @@ if usingfiles == 1
                     reverseStr = [];
                     remove = 1;
                 end
-                disp_string = ['processing frame ', int2str(i),' out of ',int2str(ns),' ...'];
+                disp_string = ['processing frame ', int2str(i-VIF_Info.frame_start),' out of ',int2str(ns),' ...'];
                 disp([reverseStr,disp_string]);
                 N_rm = length(disp_string)+1;
             end
@@ -279,9 +294,12 @@ if usingfiles == 1
                 frame_skip = VIF_Info.frame_skip, ...
                 bit_10_packed = VIF_Info.bit_10_packed, ...
                 bit_10_unpacked = VIF_Info.bit_10_unpacked, ...
-                bit_8 = VIF_Info.bit_8);
+                bit_8 = VIF_Info.bit_8, ...
+                disksector=VIF_Info.disksector, ...
+                AOI=VIF_Info.AOI);
 
             % *** Common Code ***
+            if invert=='y', im=255-im; end % Invert image
             im = bpass(im,bplo,bphi);
             massTemp=mass;minTemp=min;quietTemp=quiet;
             f = findfeatures(im,extent,'sep',sepTemp,'mass',massTemp,'min',minTemp,'quiet','y');
@@ -312,6 +330,7 @@ if usingfiles == 1
             im = imread(filen(i).name);
 
             % *** Common Code ***
+            if invert=='y', im=255-im; end % Invert image
             im = bpass(im,bplo,bphi);
             f = findfeatures(im,extent,'sep',sepTemp,'mass',massTemp,'min',minTemp,'quiet','y');
             nf = numel(f(:,1));
@@ -340,6 +359,7 @@ else
         end
 
         % *** Common Code ***
+        if invert=='y', im=255-im; end % Invert image
         im = bpass(stk(:,:,i),bplo,bphi);
         f = findfeatures(im,extent,'sep',sepTemp,'mass',massTemp,'min',minTemp,'quiet','y');
         nf = numel(f(:,1));
