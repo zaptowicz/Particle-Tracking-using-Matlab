@@ -1191,7 +1191,7 @@ end
 res(:,dd+1) = olist(:,2);
 
 % Remove dummy particles if inserted for missing frames 
-if ~isempty(dummy)
+if exist('dummy')
     w=find(res(:,1)==0);
     res(w,:) = [];
 end
