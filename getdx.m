@@ -14,8 +14,7 @@ function result=getdx(tr,thedt,varargin)
 %
 % INPUT (OPTIONAL)
 %		       dim: [default: 2] Spatial dimensions
-%             flag: ['y'] appends a column of 1's for interpolated values, 0's for
-%                   original values
+%
 % OUTPUT:
 %		    output: [dx, dy, dr]
 %
@@ -37,12 +36,14 @@ function result=getdx(tr,thedt,varargin)
 %       * Wrote the first version
 %   07/05/2023 - Kevin Aptowicz (WCU)
 %       * Translated latest version to MATLAB
-
+%   08/07/2025 - Kevin Aptowicz (WCU)
+%       * Issue with 'flag' in gdxtrinterp which should ALWAYS be used. This 
+%         appears to be what is happening in the IDL. Removed it as an
+%         option. 
 
 %% Reading and setting parameters
 % Set default values for optional parameters
 default_dim = 2;
-default_flag = [];
 
 % Create fields for all optionals inputs
 p = inputParser;
@@ -50,14 +51,11 @@ p = inputParser;
 % Variables
 addParameter(p,'dim',default_dim,@isnumeric)
 
-% Keywords
-addOptional(p,'flag', default_flag)
-
 % populate optional parameters from inputs
 parse(p,varargin{:})
 dim = p.Results.dim;
-flag = p.Results.flag;
 
+flag = 'y';     % KBA: To match IDL code 
 trin=gdxtrinterp(tr,flag);
 
 nel=numel(trin(1,:));
